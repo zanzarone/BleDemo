@@ -43,6 +43,10 @@
 	<array>
 		<string>armv7</string>
 	</array>
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>This app needs bluetooth to access our trainer</string>
+  <key>NSBluetoothPeripheralUsageDescription</key>
+  <string>This app needs bluetooth to access our trainer</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
