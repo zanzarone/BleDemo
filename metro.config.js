@@ -3,7 +3,7 @@ module.exports = {
     // x css
     babelTransformerPath: require.resolve('react-native-css-transformer'),
     resolver: {
-      sourceExts: [...sourceExts, 'css'],
+      sourceExts: ['js', 'json', 'jsx', 'css'],
     },
     // ORI
     getTransformOptions: async () => ({
