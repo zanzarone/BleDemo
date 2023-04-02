@@ -1,0 +1,124 @@
+.container {
+    background-color: rgb(44, 0, 95);
+    width: 100%;
+    height: 100%;
+  }
+  
+  .appbg {
+    height: 100%;
+    width: 100%;
+  }
+  
+  .main {
+    position: absolute;
+    bottom: 0;
+    background: rgb(242, 231, 255);
+    width: 100%;
+    height: 70%;
+    border-radius: 30px;
+    padding: 30px;
+  }
+  
+  .mainheading {
+    font-size: 20px;
+    font-weight: bold;
+    color: rgb(22, 22, 22);
+  }
+  
+  .location,
+  .booking {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    margin-top: 20;
+    margin-bottom: 20;
+  }
+  
+  .locationicons {
+    margin-left: 20;
+    margin-right: 20;
+  }
+  
+  .party {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-evenly;
+    align-items: center;
+    background: rgb(208, 166, 255);
+    border-radius: 30px;
+    width: 100px;
+    padding: 5px;
+    margin-right: 20px;
+  }
+  
+  .partybtn {
+    background: rgb(183, 149, 221);
+    padding: 5px;
+    border-radius: 5px;
+  }
+  
+  .content {
+    background: #ffffff;
+    width: 100%;
+    position: absolute;
+    bottom: 80;
+    height: 300px;
+    border-radius: 30px;
+    padding: 30px;
+  }
+  
+  .contentheading {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-evenly;
+    margin-bottom: 20px;
+  }
+  
+  .selected {
+    color: rgb(84, 0, 105);
+    font-weight: bold;
+    font-size: 18px;
+  }
+  
+  .unselected {
+    font-weight: bold;
+    font-size: 18px;
+    color: rgb(133, 125, 125);
+  }
+  
+  .description {
+    line-height: 25px;
+    color: rgb(133, 125, 125);
+  }
+  
+  .book {
+    position: absolute;
+    bottom: 78;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    padding: 30px;
+    background: rgb(44, 1, 114);
+    width: 100%;
+    border-radius: 30px;
+    height: 90px;
+  }
+  
+  .bookcost {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .bookbtn {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 7px;
+    height: 30px;
+  }
+  
+  .bookbtntext {
+    color: rgb(44, 1, 114);
+    font-weight: bold;
+  }

@@ -1,4 +1,8 @@
 {
   "name": "BleDemo",
-  "displayName": "BleDemo"
+  "displayName": "BleDemo",
+  "packagerOpts": {
+    "config": "metro.config.js",
+    "sourceExts": ["js", "jsx", "css"]
+  }
 }

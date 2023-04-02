@@ -4,6 +4,10 @@ import {
   NativeModules,
 } from 'react-native';
 
+export function startScan() {
+                            console.log('pipo');
+}
+
 // export namespace BluetoothService {
 //   const eventEmitter = new NativeEventEmitter(NativeModules.BluetoothBridge);
 
