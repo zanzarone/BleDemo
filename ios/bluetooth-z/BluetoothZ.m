@@ -10,6 +10,8 @@
 
 @interface RCT_EXTERN_MODULE(BluetoothZ, NSObject)
 
+RCT_EXTERN_METHOD(setup)
+RCT_EXTERN_METHOD(status:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 RCT_EXTERN_METHOD(startScan)
 RCT_EXTERN_METHOD(stopScan)
 

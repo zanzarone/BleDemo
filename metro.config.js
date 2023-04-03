@@ -1,16 +1,16 @@
-module.exports = {
-  transformer: {
-    // x css
-    babelTransformerPath: require.resolve('react-native-css-transformer'),
-    resolver: {
-      sourceExts: ['js', 'json', 'jsx', 'css'],
+
+const { getDefaultConfig } = require("metro-config");
+
+module.exports = (async () => {
+  const {
+    resolver: { sourceExts },
+  } = await getDefaultConfig();
+  return {
+    transformer: {
+      babelTransformerPath: require.resolve("react-native-css-transformer"),
     },
-    // ORI
-    getTransformOptions: async () => ({
-      transform: {
-        experimentalImportSupport: false,
-        inlineRequires: true,
-      },
-    }),
-  },
-};
+    resolver: {
+      sourceExts: [...sourceExts, "css"],
+    },
+  };
+})();

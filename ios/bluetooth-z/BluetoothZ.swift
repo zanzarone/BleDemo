@@ -22,11 +22,20 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   /// PROPS
   var centralManager: CBCentralManager? = nil
   
+  // @objc
+  // override init()
+  // {
+  //   super.init()
+  //   print("========================>>>> INIT")
+  //   if(centralManager == nil) {
+  //     self.centralManager =  CBCentralManager(delegate: self, queue: nil)
+  //   }
+  // }
+
   @objc
-  override init()
+  func setup()
   {
-    super.init()
-    print("========================>>>> INIT")
+    print("========================>>>> setup")
     if(centralManager == nil) {
       self.centralManager =  CBCentralManager(delegate: self, queue: nil)
     }
@@ -36,12 +45,12 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   override static func requiresMainQueueSetup() -> Bool
   {
     print("========================>>>> requiresMainQueueSetup")
-    return true;
+    return false;
   }
   
   override func supportedEvents() -> [String]!
   {
-    return [BLE_ADAPTER_STATUS_DID_UPDATE]
+    return [BLE_ADAPTER_STATUS_DID_UPDATE, BLE_PERIPHERAL_FOUND]
   }
   
   @objc
@@ -50,11 +59,22 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
     print("========================>>>> constantsToExport")
 
     return [
+      BLE_ADAPTER_STATUS_DID_UPDATE: BLE_ADAPTER_STATUS_DID_UPDATE,
+      BLE_PERIPHERAL_FOUND : BLE_PERIPHERAL_FOUND,
       BLE_ADAPTER_STATUS_POWERED_ON: NSNumber(value:CBManagerState.poweredOn.rawValue),
-      BLE_ADAPTER_STATUS_POWERED_OFF: NSNumber(value:CBManagerState.poweredOff.rawValue),
+      BLE_ADAPTER_STATUS_POWERED_OFF: NSNumber(value:CBManagerState.poweredOff.rawValue)
     ]
   }
-
+  
+  @objc(status:rejecter:)
+  func status(_ resolve: RCTPromiseResolveBlock, rejecter reject:RCTPromiseRejectBlock) -> Void {
+    if let manager = self.centralManager {
+      resolve(NSNumber(value:manager.state.rawValue))
+    }else{
+      reject("status", "could not retrieve status", nil)
+    }
+  }
+  
   @objc
   func startScan()
   {
@@ -72,6 +92,7 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   /// ===============  BLE DELEGATE
   func centralManagerDidUpdateState(_ central: CBCentralManager)
   {
+    print("========================>>>> centralManagerDidUpdateState")
     self.sendEvent(withName: BLE_ADAPTER_STATUS_DID_UPDATE, body: ["status":  NSNumber(value:central.state.rawValue)])
   }
   
@@ -79,7 +100,7 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   {
     if(peripheral.name != nil)
     {
-      self.sendEvent(withName: BLE_PERIPHERAL_FOUND, body: ["name":  peripheral.name, "RSSI", peripheral.rssi])
+      self.sendEvent(withName: BLE_PERIPHERAL_FOUND, body: ["name":  peripheral.name!, "RSSI": peripheral.rssi])
     }
   }
 }
