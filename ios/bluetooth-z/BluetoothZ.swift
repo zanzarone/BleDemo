@@ -21,16 +21,6 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
 {
   /// PROPS
   var centralManager: CBCentralManager? = nil
-  
-  // @objc
-  // override init()
-  // {
-  //   super.init()
-  //   print("========================>>>> INIT")
-  //   if(centralManager == nil) {
-  //     self.centralManager =  CBCentralManager(delegate: self, queue: nil)
-  //   }
-  // }
 
   @objc
   func setup()
@@ -75,8 +65,8 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
     }
   }
   
-  @objc
-  func startScan()
+  @objc(startScan:options:)
+  func startScan(_ serviceUUIDs: [NSString]? = nil, options: [String : Any]? = nil)
   {
     print("========================>>>> startScan")
     self.centralManager?.scanForPeripherals(withServices: [])

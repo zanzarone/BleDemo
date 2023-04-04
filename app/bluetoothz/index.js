@@ -45,6 +45,7 @@ class BluetoothService {
   }
 
   startScan(onEnd, timeout) {
+    console.log('====> START SCAN');
     if (this.bleScanTimer) {
       clearTimeout(this.bleScanTimer);
       this.bleScanTimer = null;
@@ -65,6 +66,7 @@ class BluetoothService {
   }
 
   stopScan(onEnd) {
+    console.log('====> STOP SCAN');
     BluetoothZ.stopScan();
     if (onEnd) {
       onEnd();
