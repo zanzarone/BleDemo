@@ -11,8 +11,10 @@ const bluetoothSlice = createSlice({
       state.status = action.payload;
     },
     addDevice(state, action) {
-      // const {name, rssi} = action.payload;
-      state.devices = [...state.devices, action.payload];
+      const {uuid} = action.payload;
+      let devs = state.devices.filter(d => d.uuid !== uuid);
+      devs.push(action.payload);
+      state.devices = devs;
     },
   },
 });

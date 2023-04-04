@@ -9,8 +9,13 @@ import {updateStatus, addDevice} from '../redux/slices/bluetooth.slice';
 // import our BLE native module
 const {BluetoothZ} = NativeModules;
 console.log(BluetoothZ);
-const {BLE_ADAPTER_STATUS_DID_UPDATE, BLE_PERIPHERAL_FOUND} =
-  BluetoothZ.getConstants();
+const {
+  BLE_ADAPTER_STATUS_DID_UPDATE,
+  BLE_PERIPHERAL_FOUND,
+  BLE_PERIPHERAL_CONNECTED,
+  BLE_PERIPHERAL_DISCONNECTED,
+  BLE_PERIPHERAL_CONNECT_FAILED,
+} = BluetoothZ.getConstants();
 // This event emitter will be responsible of ALL bluetooth event
 const eventEmitter = new NativeEventEmitter(BluetoothZ);
 console.log(' ========== >', BluetoothZ);
@@ -20,6 +25,9 @@ class BluetoothService {
     this.bleScanTimer = null;
     // adding the listner on Bluetooth status change
     this.bleScanListener = null;
+    this.bleConnectedListener = null;
+    this.bleDisconnectedListener = null;
+    this.bleFailToConnectListener = null;
     this.bleStatusLister = eventEmitter.addListener(
       BLE_ADAPTER_STATUS_DID_UPDATE,
       event => {
@@ -32,8 +40,8 @@ class BluetoothService {
     BluetoothZ.setup();
   }
 
-  /***
-   * Getting the status
+  /**
+   * get status of the bluetooth
    */
   async getStatus() {
     try {
@@ -43,8 +51,15 @@ class BluetoothService {
       store.dispatch(updateStatus(null));
     }
   }
-
-  startScan(onEnd, timeout) {
+  /**
+   *
+   * @param {function} onEnd => callback for scan finished event
+   * @param {array} services => array of UUID to scan
+   * @param {string} filter => filter of allowed devices
+   * @param {array} options => option for the scanner
+   * @param {int} timeout => scan interval
+   */
+  startScan(onEnd, services, filter, options, timeout) {
     console.log('====> START SCAN');
     if (this.bleScanTimer) {
       clearTimeout(this.bleScanTimer);
@@ -60,11 +75,15 @@ class BluetoothService {
         store.dispatch(addDevice(event));
       },
     );
-    BluetoothZ.startScan();
+    BluetoothZ.startScan(services, filter, options);
     timeout = !timeout ? 5000 : timeout;
     setTimeout(() => this.stopScan(onEnd), timeout);
   }
 
+  /**
+   *
+   * @param {function} onEnd => callback for scan finished event
+   */
   stopScan(onEnd) {
     console.log('====> STOP SCAN');
     BluetoothZ.stopScan();
@@ -72,87 +91,43 @@ class BluetoothService {
       onEnd();
     }
   }
+
+  /**
+   *
+   * @param {*} uuid => address of devic to connect
+   */
+  async connect(uuid, onConnected, onDisconnected, onFailToConnect) {
+    console.log('====> CONNECT');
+    if (this.bleConnectedListener) this.bleConnectedListener.remove();
+    if (this.bleDisconnectedListener) this.bleDisconnectedListener.remove();
+    if (this.bleFailToConnectListener) this.bleFailToConnectListener.remove();
+    try {
+      this.bleConnectedListener = eventEmitter.addListener(
+        BLE_PERIPHERAL_CONNECTED,
+        event => {
+          console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
+          if (onConnected) onConnected();
+        },
+      );
+      this.bleDisconnectedListener = eventEmitter.addListener(
+        BLE_PERIPHERAL_DISCONNECTED,
+        event => {
+          console.log('x BLE_PERIPHERAL_DISCONNECTED ', event);
+          if (onDisconnected) onDisconnected();
+        },
+      );
+      this.bleConnectedListener = eventEmitter.addListener(
+        BLE_PERIPHERAL_CONNECT_FAILED,
+        event => {
+          console.log('x BLE_PERIPHERAL_CONNECT_FAILED ', event);
+          if (onFailToConnect) onFailToConnect();
+        },
+      );
+      await BluetoothZ.connect(uuid);
+    } catch (error) {
+      console.log('====> Connect error', error);
+    }
+  }
 }
 
 module.exports.BluetoothService = new BluetoothService();
-
-// export namespace BluetoothService {
-
-//   export interface BleDevice {
-//     name: string;
-//   }
-
-//   export function startScanForDevices(callback: (device: BleDevice) => void ): EmitterSubscription | undefined {
-
-//     BluetoothZ.startScan();
-
-//     const sub = eventEmitter!.addListener('Device', eventListener);
-
-//     return sub;
-//   }
-
-//   export function stopScanForDevices(eventSub?: EmitterSubscription) {
-//     const {BluetoothBridge} = NativeModules;
-//     BluetoothBridge.stopScan();
-
-//     if (eventSub != null) {
-//       eventSub.remove();
-//     }
-//   }
-// }
-
-/* 
-export { Tiger } would be equivalent to module.exports.Tiger = Tiger.
-
-Conversely, module.exports = Tiger would be equivalent to export default Tiger.
-
-So when you use module.exports = Tiger and then attempt import { Tiger } from './animals' you're effectively asking for Tiger.Tiger.
-
-*/
-
-// const BluetoothOperation = {
-//   StartScan: 0,
-//   StopScan: 1,
-// };
-
-// // operation queue, to schedule app's requests to Ble
-// class BluetoothQueue {
-//   constructor() {
-//     // Create an empty array of commands
-//     this.queue = [];
-//     // We're inactive to begin with
-//     this.active = false;
-//   }
-
-//   // Method for adding command chain to the queue
-//   place(command, callback) {
-//     // Push the command onto the command array
-//     this.queue.push({command, callback});
-//     // If we're currently inactive, start processing
-//     if (!this.active) this.next();
-//   }
-
-//   // Method for calling the next command chain in the array
-//   next() {
-//     // If this is the end of the queue
-//     if (!this.queue.length) {
-//       // We're no longer active
-//       this.active = false;
-//       // Stop execution
-//       return;
-//     }
-//     // Grab the next command
-//     const command = this.queue.shift();
-//     // We're active
-//     this.active = true;
-//     // Call the command
-//     command.callback();
-//     this.next();
-//   }
-
-//   //Clearing queue
-//   clear() {
-//     this.queue.length = 0;
-//     this.active = false;
-//   }
-// }

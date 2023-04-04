@@ -15,7 +15,7 @@ import {BluetoothService} from '../bluetoothz';
 export default function Test() {
   const [isScanning, scan] = useState(false);
   const bluetooth = useSelector(state => {
-    console.info('\n[App: ', state, ']\n');
+    // console.info('\n[App: ', state, ']\n');
     return state.bluetooth;
   });
 
@@ -26,10 +26,18 @@ export default function Test() {
           <FlatList
             data={bluetooth.devices}
             renderItem={({item}) => (
-              <Text style={style.unselected}>{item.name}</Text>
+              <TouchableOpacity
+                disabled={isScanning}
+                style={!isScanning ? style.mainheading : style.bookbtnDISABLED}
+                onPress={() => {
+                  console.log('CONNECT');
+                  BluetoothService.connect(item.uuid);
+                }}>
+                <Text style={style.mainheading}>{item.name}</Text>
+              </TouchableOpacity>
             )}
           />
-          <View style={style.book}>
+          <View style={{padding: 10, gap: 10}}>
             <Text style={style.bookcost}>BT: {bluetooth.status}</Text>
             <TouchableOpacity
               disabled={isScanning}

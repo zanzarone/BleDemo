@@ -1,0 +1,76 @@
+## expor module
+
+export { Tiger } would be equivalent to module.exports.Tiger = Tiger.
+
+Conversely, module.exports = Tiger would be equivalent to export default Tiger.
+
+So when you use module.exports = Tiger and then attempt import { Tiger } from './animals' you're effectively asking for Tiger.Tiger.
+
+## Firma per ios >= 16
+
+https://stackoverflow.com/questions/68467306/the-code-signature-version-is-no-longer-supported
+Notice
+This answer is mostly for people using older versions of Xcode. My build farm was for a time stuck at Xcode 12.4 because some Mac minis couldn't be upgraded past Catalina. If you are using a recent Xcode 13+ this is not your issue. Probably cruft of some kind in your project.
+
+If you're still using an Xcode 12 release it is time to let go. The only reason to use 12.4 would be because you're stuck on Catalina and new problems are cropping up that will not be worked around so easily.
+
+codesign --generate-entitlement-der
+Apple has changed the codesign signature to include DER encoded entitlements in addition to the plist encoded entitlements. This additional DER encoded entitlements section is required in iOS 15 and becomes the default behavior of codesign in the latest Xcode. To use codesign on an older machines with an older version of Xcode add the --generate-entitlement-der flag to your call to codesign.
+
+If signing through Xcode, you can add this flag to the OTHER_CODE_SIGN_FLAGS setting in the Build Settings tab.
+
+## UI
+
+https://blog.logrocket.com/magnus-ui-tutorial-building-out-react-native-ui-components/
+https://magnus-ui.com/
+
+## queue
+
+```js
+const BluetoothOperation = {
+  StartScan: 0,
+  StopScan: 1,
+};
+
+// operation queue, to schedule app's requests to Ble
+class BluetoothQueue {
+  constructor() {
+    // Create an empty array of commands
+    this.queue = [];
+    // We're inactive to begin with
+    this.active = false;
+  }
+
+  // Method for adding command chain to the queue
+  place(command, callback) {
+    // Push the command onto the command array
+    this.queue.push({command, callback});
+    // If we're currently inactive, start processing
+    if (!this.active) this.next();
+  }
+
+  // Method for calling the next command chain in the array
+  next() {
+    // If this is the end of the queue
+    if (!this.queue.length) {
+      // We're no longer active
+      this.active = false;
+      // Stop execution
+      return;
+    }
+    // Grab the next command
+    const command = this.queue.shift();
+    // We're active
+    this.active = true;
+    // Call the command
+    command.callback();
+    this.next();
+  }
+
+  //Clearing queue
+  clear() {
+    this.queue.length = 0;
+    this.active = false;
+  }
+}
+```

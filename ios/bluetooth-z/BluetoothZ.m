@@ -11,9 +11,12 @@
 @interface RCT_EXTERN_MODULE(BluetoothZ, NSObject)
 
 RCT_EXTERN_METHOD(setup)
-RCT_EXTERN_METHOD(status:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
-RCT_EXTERN_METHOD(startScan:(NSArray*)serviceUUIDs opt:(NSDictionary*)options)
+RCT_EXTERN_METHOD(status:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(startScan:(NSArray*)serviceUUIDs filter:(NSString*)f options:(NSDictionary*)opt)
 RCT_EXTERN_METHOD(stopScan)
+RCT_EXTERN_METHOD(connect:(NSString*)uuid resolve(RCTPromiseResolveBlock)resolver reject:(RCTPromiseRejectBlock)rejecter)
+RCT_EXTERN_METHOD(discover)
+
 
 @end
 
