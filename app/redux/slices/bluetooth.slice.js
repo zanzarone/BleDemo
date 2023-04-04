@@ -5,10 +5,14 @@ const bluetoothSlice = createSlice({
   initialState: {
     status: null,
     devices: [],
+    currentDevice: null,
   },
   reducers: {
     updateStatus(state, action) {
       state.status = action.payload;
+    },
+    clearDevices(state, action) {
+      state.devices = [];
     },
     addDevice(state, action) {
       const {uuid} = action.payload;
@@ -16,8 +20,20 @@ const bluetoothSlice = createSlice({
       devs.push(action.payload);
       state.devices = devs;
     },
+    addCurrentDevice(state, action) {
+      state.currentDevice = {uuid: action.payload};
+    },
+    removeCurrentDevice(state, action) {
+      state.currentDevice = null;
+    },
   },
 });
 
-export const {updateStatus, addDevice} = bluetoothSlice.actions;
+export const {
+  updateStatus,
+  clearDevices,
+  addDevice,
+  addCurrentDevice,
+  removeCurrentDevice,
+} = bluetoothSlice.actions;
 export default bluetoothSlice.reducer;

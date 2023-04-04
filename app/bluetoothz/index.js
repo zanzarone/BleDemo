@@ -4,11 +4,16 @@ import {
   NativeModules,
 } from 'react-native';
 import {store} from '../redux/store';
-import {updateStatus, addDevice} from '../redux/slices/bluetooth.slice';
-
+import {
+  updateStatus,
+  clearDevices,
+  addDevice,
+  addCurrentDevice,
+  removeCurrentDevice,
+} from '../redux/slices/bluetooth.slice';
 // import our BLE native module
 const {BluetoothZ} = NativeModules;
-console.log(BluetoothZ);
+// console.log(BluetoothZ);
 const {
   BLE_ADAPTER_STATUS_DID_UPDATE,
   BLE_PERIPHERAL_FOUND,
@@ -61,6 +66,7 @@ class BluetoothService {
    */
   startScan(onEnd, services, filter, options, timeout) {
     console.log('====> START SCAN');
+    store.dispatch(clearDevices());
     if (this.bleScanTimer) {
       clearTimeout(this.bleScanTimer);
       this.bleScanTimer = null;
@@ -97,7 +103,8 @@ class BluetoothService {
    * @param {*} uuid => address of devic to connect
    */
   async connect(uuid, onConnected, onDisconnected, onFailToConnect) {
-    console.log('====> CONNECT');
+    console.log('====> CONNECT', uuid);
+    ///
     if (this.bleConnectedListener) this.bleConnectedListener.remove();
     if (this.bleDisconnectedListener) this.bleDisconnectedListener.remove();
     if (this.bleFailToConnectListener) this.bleFailToConnectListener.remove();
@@ -106,17 +113,19 @@ class BluetoothService {
         BLE_PERIPHERAL_CONNECTED,
         event => {
           console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
-          if (onConnected) onConnected();
+          store.dispatch(addCurrentDevice(event.uuid));
+          if (onConnected) onConnected(event.uuid);
         },
       );
       this.bleDisconnectedListener = eventEmitter.addListener(
         BLE_PERIPHERAL_DISCONNECTED,
         event => {
           console.log('x BLE_PERIPHERAL_DISCONNECTED ', event);
-          if (onDisconnected) onDisconnected();
+          store.dispatch(removeCurrentDevice(event.uuid));
+          if (onDisconnected) onDisconnected(event.uuid);
         },
       );
-      this.bleConnectedListener = eventEmitter.addListener(
+      this.bleFailToConnectListener = eventEmitter.addListener(
         BLE_PERIPHERAL_CONNECT_FAILED,
         event => {
           console.log('x BLE_PERIPHERAL_CONNECT_FAILED ', event);
@@ -124,6 +133,19 @@ class BluetoothService {
         },
       );
       await BluetoothZ.connect(uuid);
+    } catch (error) {
+      console.log('====> Connect error', error);
+    }
+  }
+
+  /**
+   *
+   * @param {*} uuid => address of devic to connect
+   */
+  async disconnect(uuid) {
+    console.log('====> DISCONNECT', uuid);
+    try {
+      await BluetoothZ.disconnect(uuid);
     } catch (error) {
       console.log('====> Connect error', error);
     }
