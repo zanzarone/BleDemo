@@ -1,6 +1,9 @@
-import React from 'react';
-import Test from './pages/Test.jsx';
+import React, {useState} from 'react';
+
+import HomeScreen from './Home.jsx';
 
 export default function App() {
-  return <Test />;
+  const [isFirstTimeRun, firstTimeRun] = useState(false);
+
+  return <HomeScreen />;
 }
