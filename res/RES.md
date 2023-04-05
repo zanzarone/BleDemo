@@ -1,3 +1,32 @@
+## Se non parte Android metro!
+
+https://stackoverflow.com/questions/45940861/android-8-cleartext-http-traffic-not-permitted/50834600#50834600
+
+According to Network security configuration -
+Starting with Android 9 (API level 28), cleartext support is disabled by default.
+`AndroidManifest.xml`
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">api.example.com(to be adjusted)</domain>
+    </domain-config>
+</network-security-config>
+AndroidManifest.xml -
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest ...>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application
+        ...
+        android:networkSecurityConfig="@xml/network_security_config"
+        ...>
+        ...
+    </application>
+</manifest>
+```
+
 ## expor module
 
 export { Tiger } would be equivalent to module.exports.Tiger = Tiger.
@@ -21,8 +50,7 @@ If signing through Xcode, you can add this flag to the OTHER_CODE_SIGN_FLAGS set
 
 ## UI
 
-https://blog.logrocket.com/magnus-ui-tutorial-building-out-react-native-ui-components/
-https://magnus-ui.com/
+https://dribbble.com/shots/18744170-Fitness-App
 
 ## queue
 

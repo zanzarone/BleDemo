@@ -13,6 +13,7 @@ let BLE_ADAPTER_STATUS_DID_UPDATE:  String  = "BLE_ADAPTER_STATUS_DID_UPDATE"
 let BLE_ADAPTER_STATUS_INVALID:  String     = "BLE_ADAPTER_STATUS_INVALID"
 let BLE_ADAPTER_STATUS_POWERED_ON:  String  = "BLE_ADAPTER_STATUS_POWERED_ON"
 let BLE_ADAPTER_STATUS_POWERED_OFF: String  = "BLE_ADAPTER_STATUS_POWERED_OFF"
+let BLE_ADAPTER_STATUS_UNKNOW: String       = "BLE_ADAPTER_STATUS_UNKNOW"
 /// ==============
 let BLE_ADAPTER_ALLOW_DUPLICATES            : String  = CBCentralManagerScanOptionAllowDuplicatesKey
 let BLE_ADAPTER_SOLICITED_SERVICE           : String  = CBCentralManagerScanOptionSolicitedServiceUUIDsKey
@@ -81,7 +82,17 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   @objc(status:reject:)
   func status(_ resolve: RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void {
     if let manager = self.centralManager {
-      resolve(NSNumber(value:manager.state.rawValue))
+//      resolve(NSNumber(value:manager.state.rawValue))
+      switch manager.state {
+      case .poweredOff: resolve( ["status":  BLE_ADAPTER_STATUS_POWERED_OFF] )
+        break
+      case .poweredOn: resolve( ["status":  BLE_ADAPTER_STATUS_POWERED_ON] )
+        break
+      default:
+        resolve( ["status":  BLE_ADAPTER_STATUS_UNKNOW] )
+        break
+      }
+
     }else{
       reject("status", "could not retrieve status", nil)
     }
@@ -152,7 +163,15 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   func centralManagerDidUpdateState(_ central: CBCentralManager)
   {
     /// ("========================>>>> centralManagerDidUpdateState")
-    self.sendEvent(withName: BLE_ADAPTER_STATUS_DID_UPDATE, body: ["status":  NSNumber(value:central.state.rawValue)])
+    switch central.state {
+    case .poweredOff: self.sendEvent(withName: BLE_ADAPTER_STATUS_DID_UPDATE, body: ["status":  BLE_ADAPTER_STATUS_POWERED_OFF])
+      break
+    case .poweredOn: self.sendEvent(withName: BLE_ADAPTER_STATUS_DID_UPDATE, body: ["status":  BLE_ADAPTER_STATUS_POWERED_ON])
+      break
+    default:
+      self.sendEvent(withName: BLE_ADAPTER_STATUS_DID_UPDATE, body: ["status":  BLE_ADAPTER_STATUS_UNKNOW])
+      break
+    }
   }
   
   func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String : Any], rssi RSSI: NSNumber)

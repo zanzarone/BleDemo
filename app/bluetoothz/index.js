@@ -33,10 +33,11 @@ class BluetoothService {
     this.bleConnectedListener = null;
     this.bleDisconnectedListener = null;
     this.bleFailToConnectListener = null;
+    console.log('\n\n\n INITIALIZE \n\n\n');
     this.bleStatusLister = eventEmitter.addListener(
       BLE_ADAPTER_STATUS_DID_UPDATE,
       event => {
-        console.log(event);
+        console.log('stato cambiato', event);
         /// sincronizing the store
         store.dispatch(updateStatus(event.status));
       },
@@ -50,7 +51,7 @@ class BluetoothService {
    */
   async getStatus() {
     try {
-      const status = await BluetoothZ.status();
+      const {status} = await BluetoothZ.status();
       store.dispatch(updateStatus(status));
     } catch (error) {
       store.dispatch(updateStatus(null));
@@ -104,6 +105,9 @@ class BluetoothService {
    */
   async connect(uuid, onConnected, onDisconnected, onFailToConnect) {
     console.log('====> CONNECT', uuid);
+    // if(store.getState().bluetooth?.currentDevice !== nil){
+    //   this.disconnect()
+    // }
     ///
     if (this.bleConnectedListener) this.bleConnectedListener.remove();
     if (this.bleDisconnectedListener) this.bleDisconnectedListener.remove();

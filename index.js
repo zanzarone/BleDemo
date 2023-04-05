@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import {AppRegistry} from 'react-native';
-import App from './app/App.jsx';
+import {AppRegistry, Platform} from 'react-native';
+import App from './app/App';
 import {name as appName} from './app.json';
 // Now let's initialize the store.
 import {Provider} from 'react-redux';
