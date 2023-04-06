@@ -14,11 +14,9 @@ RCT_EXTERN_METHOD(setup)
 RCT_EXTERN_METHOD(status:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)rejecter)
 RCT_EXTERN_METHOD(startScan:(NSArray*)serviceUUIDs filter:(NSString*)f options:(NSDictionary*)opt)
 RCT_EXTERN_METHOD(stopScan)
-RCT_EXTERN_METHOD(connect:(NSString*)uuidString resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
-RCT_EXTERN_METHOD(disconnect:(NSString*)uuidString resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
-
-RCT_EXTERN_METHOD(discover)
-
+RCT_EXTERN_METHOD(connect:(NSString*)uuidString)
+RCT_EXTERN_METHOD(disconnect:(NSString*)uuidString)
+RCT_EXTERN_METHOD(discover:(NSString*)uuidString)
 
 @end
 

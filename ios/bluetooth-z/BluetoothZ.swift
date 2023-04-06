@@ -9,19 +9,21 @@ import Foundation
 import React
 import CoreBluetooth
 
-let BLE_ADAPTER_STATUS_DID_UPDATE:  String  = "BLE_ADAPTER_STATUS_DID_UPDATE"
-let BLE_ADAPTER_STATUS_INVALID:  String     = "BLE_ADAPTER_STATUS_INVALID"
-let BLE_ADAPTER_STATUS_POWERED_ON:  String  = "BLE_ADAPTER_STATUS_POWERED_ON"
-let BLE_ADAPTER_STATUS_POWERED_OFF: String  = "BLE_ADAPTER_STATUS_POWERED_OFF"
-let BLE_ADAPTER_STATUS_UNKNOW: String       = "BLE_ADAPTER_STATUS_UNKNOW"
-/// ==============
-let BLE_ADAPTER_ALLOW_DUPLICATES            : String  = CBCentralManagerScanOptionAllowDuplicatesKey
-let BLE_ADAPTER_SOLICITED_SERVICE           : String  = CBCentralManagerScanOptionSolicitedServiceUUIDsKey
+let BLE_ADAPTER_STATUS_DID_UPDATE           : String  = "BLE_ADAPTER_STATUS_DID_UPDATE"
+let BLE_ADAPTER_STATUS_INVALID              : String  = "BLE_ADAPTER_STATUS_INVALID"
+let BLE_ADAPTER_STATUS_POWERED_ON           : String  = "BLE_ADAPTER_STATUS_POWERED_ON"
+let BLE_ADAPTER_STATUS_POWERED_OFF          : String  = "BLE_ADAPTER_STATUS_POWERED_OFF"
+let BLE_ADAPTER_STATUS_UNKNOW               : String  = "BLE_ADAPTER_STATUS_UNKNOW"
 let BLE_PERIPHERAL_FOUND                    : String  = "BLE_PERIPHERAL_FOUND"
+let BLE_PERIPHERAL_CONNECTING               : String  = "BLE_PERIPHERAL_CONNECTING"
 let BLE_PERIPHERAL_CONNECTED                : String  = "BLE_PERIPHERAL_CONNECTED"
 let BLE_PERIPHERAL_DISCONNECTED             : String  = "BLE_PERIPHERAL_DISCONNECTED"
 let BLE_PERIPHERAL_CONNECT_FAILED           : String  = "BLE_PERIPHERAL_CONNECT_FAILED"
+let BLE_PERIPHERAL_DISCONNECT_FAILED        : String  = "BLE_PERIPHERAL_DISCONNECT_FAILED"
 let BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED : String  = "BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED"
+/// ==============
+let BLE_ADAPTER_ALLOW_DUPLICATES            : String  = CBCentralManagerScanOptionAllowDuplicatesKey
+let BLE_ADAPTER_SOLICITED_SERVICE           : String  = CBCentralManagerScanOptionSolicitedServiceUUIDsKey
 
 
 @objc(BluetoothZ)
@@ -29,7 +31,8 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
 {
   /// PROPS
   var centralManager: CBCentralManager? = nil
-  var currentPeripheral: CBPeripheral? = nil
+  var currentPeripheral: [String:CBPeripheral] = [:]
+  var connectionTimer: Timer? = nil
   
   @objc
   func setup()
@@ -51,9 +54,11 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   {
     return [BLE_ADAPTER_STATUS_DID_UPDATE,
             BLE_PERIPHERAL_FOUND,
+            BLE_PERIPHERAL_CONNECTING,
             BLE_PERIPHERAL_CONNECTED,
             BLE_PERIPHERAL_DISCONNECTED,
             BLE_PERIPHERAL_CONNECT_FAILED,
+            BLE_PERIPHERAL_DISCONNECT_FAILED,
             BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED
     ]
   }
@@ -66,9 +71,11 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
     return [
       BLE_ADAPTER_STATUS_DID_UPDATE: BLE_ADAPTER_STATUS_DID_UPDATE,
       BLE_PERIPHERAL_FOUND : BLE_PERIPHERAL_FOUND,
+      BLE_PERIPHERAL_CONNECTING : BLE_PERIPHERAL_CONNECTING,
       BLE_PERIPHERAL_CONNECTED : BLE_PERIPHERAL_CONNECTED,
       BLE_PERIPHERAL_DISCONNECTED : BLE_PERIPHERAL_DISCONNECTED,
       BLE_PERIPHERAL_CONNECT_FAILED: BLE_PERIPHERAL_CONNECT_FAILED,
+      BLE_PERIPHERAL_DISCONNECT_FAILED: BLE_PERIPHERAL_DISCONNECT_FAILED,
       // A Boolean value that specifies whether the scan should run without duplicate filtering.
       BLE_ADAPTER_ALLOW_DUPLICATES : CBCentralManagerScanOptionAllowDuplicatesKey,
       // An array of service UUIDs that you want to scan for.
@@ -118,48 +125,71 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
     self.centralManager?.stopScan()
   }
   
-  @objc(connect:resolve:reject:)
-  func connect(_ uuidString: String, resolve: RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock)
+  @objc(connect:)
+  func connect(_ uuidString: String)
   {
     /// ("========================>>>> connect")
     if let uuid = UUID(uuidString: uuidString){
+      /// i'm already connected to a device
+      if self.currentPeripheral.contains(where: { (key: String, value: CBPeripheral) -> Bool in
+        return key.compare(uuidString) == .orderedSame
+      }) {
+        return
+      }
       let _peripherals : [CBPeripheral]? = self.centralManager?.retrievePeripherals(withIdentifiers:[uuid])
       if let peripherals = _peripherals , peripherals.count > 0 {
-        self.currentPeripheral = peripherals.first!
-        self.centralManager?.connect(self.currentPeripheral!)
-        resolve(true)
+        let device = peripherals.first!
+        self.currentPeripheral[uuidString] = device
+        self.centralManager?.connect(device)
+        self.sendEvent(withName: BLE_PERIPHERAL_CONNECTING, body: nil)
       }else{
-        reject("connect", "could not find devices with id \(uuidString).", nil)
+        self.sendEvent(withName: BLE_PERIPHERAL_CONNECT_FAILED, body: ["error":  "could not find devices with id \(uuidString)."])
       }
     }else{
-      reject("connect", "could not create uuid from \(uuidString).", nil)
+      self.sendEvent(withName: BLE_PERIPHERAL_CONNECT_FAILED, body: ["error":  "could not create uuid from \(uuidString)."])
     }
   }
   
-  @objc(disconnect:resolve:reject:)
-  func disconnect(_ uuidString: String, resolve: RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock)
+  @objc(disconnect:)
+  func disconnect(_ uuidString: String)
   {
     /// ("========================>>>> disconnect")
-    if let peripheral = self.currentPeripheral {
-      self.centralManager?.cancelPeripheralConnection(peripheral)
-      resolve(true)
-    }else{
-      reject("disconnect", "current devices with id \(uuidString). not found", nil)
+    if self.currentPeripheral.contains(where: { (key: String, value: CBPeripheral) -> Bool in
+      return key.compare(uuidString) != .orderedSame
+    }) {
+      /// i need to disconnect the current device before attempting a new connection
+      return
     }
-   
+    if let peripheral = self.currentPeripheral[uuidString] {
+      self.centralManager?.cancelPeripheralConnection(peripheral)
+      self.sendEvent(withName: BLE_PERIPHERAL_DISCONNECTED, body: ["uuid": peripheral.identifier.uuidString])
+    }else{
+      self.sendEvent(withName: BLE_PERIPHERAL_DISCONNECT_FAILED, body: ["error": "peripheral not found with uuid:\(uuidString)"])
+    }
   }
   
   @objc
-  func discover(_ resolve: RCTPromiseResolveBlock, reject:RCTPromiseRejectBlock) -> Void
+  func discover(_ uuidString: String) -> Void
   {
     /// ("========================>>>> setup")
-    if(self.currentPeripheral != nil) {
-      self.currentPeripheral?.discoverServices([])
+    if self.currentPeripheral.contains(where: { (key: String, value: CBPeripheral) -> Bool in
+      return key.compare(uuidString) != .orderedSame
+    }) {
+      /// i need to disconnect the current device before attempting a new connection
+      self.sendEvent(withName: BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED, body: ["error": "peripheral not found with uuid:\(uuidString)"])
+      return
     }
+    let device = self.currentPeripheral[uuidString]
+    device!.discoverServices([])
   }
-
   
+  /// =======================================================================================================================================
+  /// =======================================================================================================================================
+  /// =======================================================================================================================================
   /// ===============  BLE DELEGATE
+  /// =======================================================================================================================================
+  /// =======================================================================================================================================
+  /// =======================================================================================================================================
   func centralManagerDidUpdateState(_ central: CBCentralManager)
   {
     /// ("========================>>>> centralManagerDidUpdateState")
@@ -184,29 +214,42 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
   
   func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral)
   {
-    self.sendEvent(withName: BLE_PERIPHERAL_CONNECTED, body: ["uuid": self.currentPeripheral!.identifier.uuidString])
+    if self.currentPeripheral.contains(where: { (key: String, value: CBPeripheral) -> Bool in
+      return key.compare(peripheral.identifier.uuidString) != .orderedSame
+    }) {
+      /// i need to disconnect the current device before attempting a new connection
+      self.sendEvent(withName: BLE_PERIPHERAL_CONNECT_FAILED, body: ["error": "peripheral not found with uuid:\(peripheral.identifier.uuidString)"])
+      return
+    }
+    self.sendEvent(withName: BLE_PERIPHERAL_CONNECTED, body: ["uuid": peripheral.identifier.uuidString])
   }
   
-  func centralManager(_ central: CBCentralManager, didDisconnectPeripheral: CBPeripheral, error: Error?)
+  func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?)
   {
-    var body : [String : Any] = ["uuid": self.currentPeripheral!.identifier.uuidString]
+    if self.currentPeripheral.contains(where: { (key: String, value: CBPeripheral) -> Bool in
+      return key.compare(peripheral.identifier.uuidString) != .orderedSame
+    }) {
+      /// i need to disconnect the current device before attempting a new connection
+      self.sendEvent(withName: BLE_PERIPHERAL_DISCONNECT_FAILED, body: ["error": "peripheral not found with uuid:\(peripheral.identifier.uuidString)"])
+      return
+    }
+    var body : [String : Any] = ["uuid": peripheral.identifier.uuidString]
     if let error = error {
       body["error"] = error.localizedDescription
     }
     self.sendEvent(withName: BLE_PERIPHERAL_DISCONNECTED, body: body)
   }
   
-  func centralManager(_ central: CBCentralManager, didFailToConnect: CBPeripheral, error: Error?)
+  func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?)
   {
-    self.sendEvent(withName: BLE_PERIPHERAL_CONNECT_FAILED, body: ["error": error != nil ? error!.localizedDescription : "Unknow error"])
+    self.sendEvent(withName: BLE_PERIPHERAL_CONNECT_FAILED, body: ["uuid": peripheral.identifier.uuidString, "error": error != nil ? error!.localizedDescription : "Unknow error"])
   }
   
   func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?)
   {
     if let err = error {
-      self.sendEvent(withName: BLE_PERIPHERAL_CONNECT_FAILED, body: ["error": err.localizedDescription])
+      self.sendEvent(withName: BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED, body: ["uuid": peripheral.identifier.uuidString, "error": err.localizedDescription])
       return
     }
   }
 }
- 

@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -15,6 +17,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.util.Log;
 
@@ -36,6 +39,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Promise;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -57,7 +61,8 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     private LocalBroadcastReceiver  mLocalBroadcastReceiver     = new LocalBroadcastReceiver();
     private LocalScanCallback  mScanCallback                    = new LocalScanCallback();
     private LocalBluetoothGattCallback  mBluetoothGATTCallback  = new LocalBluetoothGattCallback();
-    private BluetoothGatt currentDeviceGATTServer = null;
+//    private BluetoothGatt currentDeviceGATTServer               = null;
+    private HashMap<String, Peripheral> mPeripherals            = new HashMap<String, Peripheral>();
 //    private boolean isScanning = false;
     public class LocalBroadcastReceiver extends BroadcastReceiver {
         @Override
@@ -88,6 +93,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     }
 
     private class LocalBluetoothGattCallback extends BluetoothGattCallback {
+        @SuppressLint("MissingPermission")
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String uuid = gatt.getDevice().getAddress();
@@ -96,15 +102,88 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
                 params.putString("uuid", uuid);
                 Log.w("SAMUELE", "Device CONNECTED!!!!." + uuid);
                 sendEvent(reactContext, BLE_PERIPHERAL_CONNECTED, params);
+                // Attempts to discover services after successful connection.
+                if(mPeripherals.containsKey(gatt.getDevice().getAddress())) {
+                    Peripheral p = mPeripherals.get(gatt.getDevice().getAddress());
+                    p.discover();
+                }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 // disconnected from the GATT Server
+                if(mPeripherals.containsKey(gatt.getDevice().getAddress())) {
+                    Peripheral p = mPeripherals.remove(gatt.getDevice().getAddress());
+                    p.flush();
+                }
                 WritableMap params = Arguments.createMap();
                 params.putString("uuid", uuid);
                 Log.w("SAMUELE", "Device DISCONNECTED!!!!." + uuid);
                 sendEvent(reactContext, BLE_PERIPHERAL_DISCONNECTED, params);
             }
         }
+        @Override
+        public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+//                broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                Log.w("SAMUELE", "onServicesDiscovered received: " + gatt.getDevice().getAddress());
+                List<BluetoothGattService> services = gatt.getServices();
+                for (BluetoothGattService service: services ) {
+                    Log.i("SAMUELE", "=>" + service.getUuid().toString());
+                    List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
+                    for (BluetoothGattCharacteristic c : characteristics) {
+                        Log.i("SAMUELE", "==>" + c.getUuid().toString());
+                    }
+                }
+            } else {
+                Log.e("SAMUELE", "onServicesDiscovered received: " + status);
+            }
+        }
+
+        @Override
+        public void onCharacteristicRead( BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status ) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+            }
+        }
+
+        @Override
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
+        }
     };
+
+    public class Peripheral {
+        private BluetoothGatt mBluetoothGATT;
+        private HashMap<String, BluetoothGattCharacteristic> mCharacteristic;
+        public Peripheral(BluetoothGatt gatt){
+            this.mBluetoothGATT     = gatt;
+            this.mCharacteristic    = new HashMap<>();
+        }
+        @SuppressLint("MissingPermission")
+        public void discover() {
+            this.mBluetoothGATT.discoverServices();
+        }
+        @SuppressLint("MissingPermission")
+        public void disconnect() {
+            this.mBluetoothGATT.disconnect();
+        }
+        @SuppressLint("MissingPermission")
+        public void flush() {
+            this.mBluetoothGATT.close();
+            this.mBluetoothGATT = null;
+            this.mCharacteristic.clear();
+        }
+        @SuppressLint("MissingPermission")
+        public void setCharacteristic(BluetoothGattCharacteristic c){
+            mCharacteristic.put(c.getUuid().toString(), c);
+        }
+        @SuppressLint("MissingPermission")
+        public void readCharacteristic(String uuid){
+            mBluetoothGATT.readCharacteristic(mCharacteristic.get(uuid));
+        }
+        @SuppressLint("MissingPermission")
+        public void writeCharacteristic(String uuid, byte[] value, int type){
+            BluetoothGattCharacteristic characteristic = mCharacteristic.get(uuid);
+            characteristic.setValue(value);
+            mBluetoothGATT.writeCharacteristic(characteristic);
+        }
+    }
 
     public BluetoothZ(ReactApplicationContext context) {
         super(context);
@@ -208,34 +287,35 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void connect(String uuid) {
+        if(mPeripherals.containsKey(uuid)) {
+            return;
+        }
         try {
             Log.d("SAMUELE","=====> CONNECT");
             final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(uuid);
-            currentDeviceGATTServer = device.connectGatt(reactContext, false, mBluetoothGATTCallback);
+            BluetoothGatt gatt = device.connectGatt(reactContext, false, mBluetoothGATTCallback);
+            mPeripherals.put(device.getAddress(), new Peripheral(gatt));
         } catch (IllegalArgumentException exception) {
             WritableMap params = Arguments.createMap();
             params.putString("error", exception.getLocalizedMessage());
             Log.w("SAMUELE", "Device not found with provided address." + uuid);
             sendEvent(reactContext, BLE_PERIPHERAL_CONNECT_FAILED, params);
         }
-
     }
-
 
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void disconnect(String uuid) {
         Log.d("SAMUELE","=====> DISCONNECT");
-        if(currentDeviceGATTServer.getDevice().getAddress().compareToIgnoreCase(uuid) == 0){
-            Log.d("SAMUELE","=====> DISCONNECT 2");
-            currentDeviceGATTServer.close();
-//            currentDeviceGATTServer = null;
-        }else {
+        if(!mPeripherals.containsKey(uuid)) {
             WritableMap params = Arguments.createMap();
             params.putString("error", "SO NA SEGA");
             Log.w("SAMUELE", "Device not found with provided address." + uuid);
             sendEvent(reactContext, BLE_PERIPHERAL_CONNECT_FAILED, params);
+            return;
         }
+        Peripheral p = mPeripherals.get(uuid);
+        p.disconnect();
     }
 
 
@@ -256,3 +336,20 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     }
 
 }
+
+
+//    private class DeviceConnectionTimer extends CountDownTimer {
+//        public DeviceConnectionTimer(long millisInFuture, long countDownInterval) {
+//            super(millisInFuture, countDownInterval);
+//        }
+//
+//        @Override
+//        public void onTick(long l) {
+//
+//        }
+//
+//        @Override
+//        public void onFinish() {
+////            currentDeviceGATTServer.getDevice().
+//        }
+//    }

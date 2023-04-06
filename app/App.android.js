@@ -6,7 +6,7 @@ import {
   checkBluetoothPermission,
   showPermission,
 } from './utils/androidPermissions';
-import HomeScreen from './Home.jsx';
+import HomeScreen from './pages/home/Home';
 
 const PermissionStatus = {GRANTED: 0, REJECTED: 1, TO_CHECK: 2};
 
