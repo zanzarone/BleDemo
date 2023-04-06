@@ -27,7 +27,7 @@ export default function HomeScreen() {
           },
         }}
         tabBar={props => <BottomBar {...props} />}>
-        <Tab.Screen name="Test" component={TestScreen} />
+        <Tab.Screen name="Activity" component={TestScreen} />
         <Tab.Screen name="Status" component={StatusScreen} />
         <Tab.Screen name="Settings" component={SettingsScreen} />
       </Tab.Navigator>
