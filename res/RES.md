@@ -51,6 +51,9 @@ If signing through Xcode, you can add this flag to the OTHER_CODE_SIGN_FLAGS set
 ## UI
 
 https://dribbble.com/shots/18744170-Fitness-App
+https://dribbble.com/shots/19860819-Workout-Mobile-App
+https://dribbble.com/shots/20850588-LooizeCare-health-App
+https://dribbble.com/shots/19711233-Fitness-App
 
 ## queue
 
