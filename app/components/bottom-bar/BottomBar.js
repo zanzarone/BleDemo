@@ -1,6 +1,11 @@
 import React from 'react';
 import {Text, View, TouchableOpacity, StyleSheet, Platform} from 'react-native';
+import Icon from 'react-native-vector-icons/dist/Feather';
 
+const icons = [
+  {name: 'feather', size: 24},
+  {name: 'compass', size: 24},
+];
 export default function BottomBar({state, descriptors, navigation}) {
   return (
     <View style={styles.bottomBar}>
@@ -43,13 +48,10 @@ export default function BottomBar({state, descriptors, navigation}) {
             onPress={onPress}
             onLongPress={onLongPress}
             style={styles.bottomBarItem}>
-            <Text
-              style={{
-                color: isFocused ? styles.activeColor : styles.idleColor,
-                fontFamily: 'Baloo2-Bold',
-              }}>
-              A
-            </Text>
+            <Icon
+              color={isFocused ? styles.activeColor : styles.idleColor}
+              {...icons[index]}
+            />
             <Text
               style={{
                 color: isFocused ? styles.activeColor : styles.idleColor,
@@ -91,12 +93,13 @@ if (Platform.OS === 'android') {
 } else {
   styles = StyleSheet.create({
     bottomBar: {
+      // height: 80,
       flexDirection: 'row',
       position: 'absolute',
       bottom: 25,
       marginLeft: 20,
       marginRight: 20,
-      backgroundColor: 'snow',
+      backgroundColor: '#252525',
       borderRadius: 15,
       shadowColor: '#555',
       shadowOffset: {width: -2, height: 4},
@@ -107,9 +110,10 @@ if (Platform.OS === 'android') {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 20,
+      height: 80,
+      // padding: 20,
     },
-    activeColor: 'blue',
-    idleColor: 'silver',
+    activeColor: '#fff',
+    idleColor: '#555',
   });
 }

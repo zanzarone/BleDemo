@@ -1,12 +1,47 @@
 import React from 'react';
-import {Text, View, TouchableOpacity, StyleSheet, Platform} from 'react-native';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Platform,
+  Image,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/dist/Feather';
 
 export default function HeaderBar({title}) {
   return (
-    <View style={styles.header}>
-      <Icon name="grid" size={25} color="#fff" />
-      <Text style={styles.headerTitle}>{title}</Text>
+    <View style={[styles.header, {justifyContent: 'space-between'}]}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>{title}</Text>
+        <Icon name="chevron-down" size={30} color="#555" style={{}} />
+      </View>
+      <View style={{marginRight: 15}}>
+        <TouchableOpacity>
+          <View
+            style={{
+              height: 50,
+              width: 50,
+              backgroundColor: '#222',
+              borderRadius: 10,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Image
+              source={require('../../assets/26628675.jpeg')}
+              style={{
+                height: 40,
+                width: 40,
+                resizeMode: 'contain',
+                borderRadius: 10,
+                borderColor: '#555',
+                borderWidth: 1,
+              }}
+            />
+            {/* <Icon name="user" size={24} color="#fff" /> */}
+          </View>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -21,7 +56,7 @@ if (Platform.OS === 'android') {
       height: 70,
     },
     headerTitle: {
-      //   marginLeft: 10,
+      marginLeft: 15,
       fontSize: 38,
       fontFamily: 'Baloo2-SemiBold',
       color: '#fff',
@@ -30,15 +65,20 @@ if (Platform.OS === 'android') {
 } else {
   styles = StyleSheet.create({
     header: {
-      justifyContent: 'flex-end',
-      backgroundColor: '#fff',
-      height: 100,
+      flexDirection: 'row',
+      alignItems: 'center',
+      // backgroundColor: '#f00',
+      gap: 1,
+      // height: 80,
     },
     headerTitle: {
-      marginLeft: 10,
-      fontSize: 38,
-      fontFamily: 'Baloo2-SemiBold',
-      color: '#0a0911',
+      marginLeft: 15,
+      // flexDirection: 'row',
+      fontSize: 32,
+      fontFamily: 'Baloo2-Medium',
+      color: '#fff',
+      // backgroundColor: '#0f0',
+      // height: '100%',
     },
   });
 }
