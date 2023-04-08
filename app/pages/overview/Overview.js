@@ -6,10 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import HeaderBar from '../../components/header-bar/HeaderBar';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/dist/Feather';
+
+const screenWidth = Dimensions.get('window').width;
+// console.log(screenWidth);
 
 function Activity({title, time, distance, map}) {
   return (
@@ -18,7 +22,7 @@ function Activity({title, time, distance, map}) {
       style={[
         {
           flexDirection: 'row',
-          backgroundColor: '#252525',
+          backgroundColor: '#171717',
           borderRadius: 15,
           padding: 15,
           gap: 10,
@@ -107,7 +111,7 @@ function RecentActivityCard() {
   return (
     <View
       style={{
-        backgroundColor: '#171717',
+        backgroundColor: '#222',
         flex: 1,
         borderRadius: 20,
         marginLeft: 10,
@@ -162,7 +166,7 @@ function RecentActivityCard() {
           kcal burnt
         </Text>
       </View>
-      <ScrollView>
+      <ScrollView nestedScrollEnabled={true}>
         {activities.map(a => (
           <Activity
             key={a.title}
@@ -242,35 +246,35 @@ function PowerSummaryChart() {
           </TouchableOpacity>
         </View>
       </View>
-      <View>
-        <ProgressChart
-          data={{
-            labels: ['Swim', 'Bike', 'Run'], // optional
-            data: [0.4, 0.6, 0.8],
-          }}
-          width={350}
-          height={220}
-          strokeWidth={16}
-          radius={32}
-          chartConfig={{
-            // backgroundColor: '#171717',
-            backgroundGradientFrom: '#222',
-            backgroundGradientTo: '#222',
-            decimalPlaces: 2, // optional, defaults to 2dp
-            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: '6',
-              strokeWidth: '2',
-              stroke: 'silver',
-            },
-          }}
-          hideLegend={false}
-        />
-      </View>
+      {/* <View> */}
+      <ProgressChart
+        data={{
+          labels: ['Swim', 'Bike', 'Run'], // optional
+          data: [0.4, 0.6, 0.8],
+        }}
+        width={screenWidth - 80}
+        height={220}
+        strokeWidth={16}
+        radius={32}
+        chartConfig={{
+          // backgroundColor: '#171717',
+          backgroundGradientFrom: '#222',
+          backgroundGradientTo: '#222',
+          decimalPlaces: 2, // optional, defaults to 2dp
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          style: {
+            borderRadius: 16,
+          },
+          propsForDots: {
+            r: '6',
+            strokeWidth: '2',
+            stroke: 'silver',
+          },
+        }}
+        hideLegend={false}
+      />
+      {/* </View> */}
     </View>
   );
 }
@@ -338,51 +342,51 @@ function PowerSummaryChart2() {
           </TouchableOpacity>
         </View>
       </View>
-      <View>
-        <LineChart
-          data={{
-            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-            datasets: [
-              {
-                data: [
-                  Math.random() * 100,
-                  Math.random() * 100,
-                  Math.random() * 100,
-                  Math.random() * 100,
-                  Math.random() * 100,
-                  Math.random() * 100,
-                ],
-              },
-            ],
-          }}
-          width={350} // from react-native
-          height={220}
-          yAxisLabel="$"
-          yAxisSuffix="k"
-          yAxisInterval={1} // optional, defaults to 1
-          chartConfig={{
-            // backgroundColor: '#171717',
-            backgroundGradientFrom: '#222',
-            backgroundGradientTo: '#222',
-            decimalPlaces: 2, // optional, defaults to 2dp
-            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            style: {
-              borderRadius: 16,
+      {/* <View> */}
+      <LineChart
+        data={{
+          labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+          datasets: [
+            {
+              data: [
+                Math.random() * 100,
+                Math.random() * 100,
+                Math.random() * 100,
+                Math.random() * 100,
+                Math.random() * 100,
+                Math.random() * 100,
+              ],
             },
-            propsForDots: {
-              r: '6',
-              strokeWidth: '2',
-              stroke: 'silver',
-            },
-          }}
-          bezier
-          style={{
-            marginVertical: 8,
+          ],
+        }}
+        width={screenWidth - 60}
+        height={220}
+        yAxisLabel="$"
+        yAxisSuffix="k"
+        yAxisInterval={1} // optional, defaults to 1
+        chartConfig={{
+          // backgroundColor: '#171717',
+          backgroundGradientFrom: '#222',
+          backgroundGradientTo: '#222',
+          decimalPlaces: 2, // optional, defaults to 2dp
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          style: {
             borderRadius: 16,
-          }}
-        />
-      </View>
+          },
+          propsForDots: {
+            r: '6',
+            strokeWidth: '2',
+            stroke: 'silver',
+          },
+        }}
+        bezier
+        style={{
+          marginVertical: 8,
+          borderRadius: 16,
+        }}
+      />
+      {/* </View> */}
     </View>
   );
 }
@@ -403,6 +407,7 @@ export default function Overview() {
       ]}>
       <HeaderBar title="Overview" />
       <ScrollView
+        nestedScrollEnabled={true}
         style={{
           flexDirection: 'column',
           flex: 1,

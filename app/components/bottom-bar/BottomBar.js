@@ -3,7 +3,8 @@ import {Text, View, TouchableOpacity, StyleSheet, Platform} from 'react-native';
 import Icon from 'react-native-vector-icons/dist/Feather';
 
 const icons = [
-  {name: 'feather', size: 24},
+  {name: 'cpu', size: 24},
+  {name: 'monitor', size: 24},
   {name: 'compass', size: 24},
 ];
 export default function BottomBar({state, descriptors, navigation}) {
@@ -85,7 +86,7 @@ if (Platform.OS === 'android') {
       flexDirection: 'column',
       justifyContent: 'center',
       alignItems: 'center',
-      padding: 20,
+      height: 80,
     },
     activeColor: '#fff',
     idleColor: '#555',
@@ -99,9 +100,9 @@ if (Platform.OS === 'android') {
       bottom: 25,
       marginLeft: 20,
       marginRight: 20,
-      backgroundColor: '#252525',
+      backgroundColor: '#393939',
       borderRadius: 15,
-      shadowColor: '#555',
+      shadowColor: 'black',
       shadowOffset: {width: -2, height: 4},
       shadowOpacity: 0.2,
       shadowRadius: 3,

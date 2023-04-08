@@ -1,18 +1,22 @@
 import {createSlice} from '@reduxjs/toolkit';
+const initialState = {
+  status: null,
+  devices: [],
+  currentDevice: {
+    uuid: null,
+    chars: {},
+  },
+};
 
 const bluetoothSlice = createSlice({
   name: 'bluetooth',
-  initialState: {
-    status: null,
-    devices: [],
-    currentDevice: null,
-  },
+  initialState,
   reducers: {
     updateStatus(state, action) {
       state.status = action.payload;
     },
     clearDevices(state, action) {
-      state.devices = [];
+      state.devices = initialState.devices;
     },
     addDevice(state, action) {
       const {uuid} = action.payload;
@@ -21,10 +25,31 @@ const bluetoothSlice = createSlice({
       state.devices = devs;
     },
     addCurrentDevice(state, action) {
-      state.currentDevice = {uuid: action.payload};
+      state.currentDevice.uuid = action.payload;
     },
     removeCurrentDevice(state, action) {
-      state.currentDevice = null;
+      state.currentDevice = initialState.currentDevice;
+    },
+    characteristicDiscovered(state, action) {
+      const {uuid, charUUID} = action.payload;
+      console.log(' PIPPO ', uuid, charUUID, state.currentDevice);
+      state.currentDevice.chars[uuid] = {notification: false};
+    },
+    characteristicRead(state, action) {
+      const {uuid, charUUID, value} = action.payload;
+      state.currentDevice.chars[charUUID] = {value, notification: false};
+    },
+    characteristicReadFailed(state, action) {
+      const {uuid, charUUID} = action.payload;
+      state.currentDevice.chars[charUUID] = null;
+    },
+    characteristicUpdates(state, action) {
+      const {uuid, charUUID, enable, value} = action.payload;
+      state.currentDevice.chars[charUUID] = {value, notification: enable};
+    },
+    characteristicChangeNotification(state, action) {
+      const {uuid, charUUID, enable} = action.payload;
+      state.currentDevice.chars[charUUID].notification = enable;
     },
   },
 });
@@ -35,5 +60,10 @@ export const {
   addDevice,
   addCurrentDevice,
   removeCurrentDevice,
+  characteristicDiscovered,
+  characteristicRead,
+  characteristicReadFailed,
+  characteristicChangeNotification,
+  characteristicUpdates,
 } = bluetoothSlice.actions;
 export default bluetoothSlice.reducer;

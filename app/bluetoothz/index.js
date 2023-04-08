@@ -10,6 +10,11 @@ import {
   addDevice,
   addCurrentDevice,
   removeCurrentDevice,
+  characteristicDiscovered,
+  characteristicRead,
+  characteristicReadFailed,
+  characteristicChangeNotification,
+  characteristicUpdates,
 } from '../redux/slices/bluetooth.slice';
 // import our BLE native module
 const {BluetoothZ} = NativeModules;
@@ -20,6 +25,14 @@ const {
   BLE_PERIPHERAL_CONNECTED,
   BLE_PERIPHERAL_DISCONNECTED,
   BLE_PERIPHERAL_CONNECT_FAILED,
+  BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED,
+  BLE_PERIPHERAL_CHARACTERISTIC_READ_OK,
+  BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED,
+  BLE_PERIPHERAL_CHARACTERISTIC_WRITE_OK,
+  BLE_PERIPHERAL_CHARACTERISTIC_WRITE_FAILED,
+  BLE_PERIPHERAL_NOTIFICATION_UPDATES,
+  BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED,
+  BLE_PERIPHERAL_NOTIFICATION_CHANGED,
 } = BluetoothZ.getConstants();
 // This event emitter will be responsible of ALL bluetooth event
 const eventEmitter = new NativeEventEmitter(BluetoothZ);
@@ -27,12 +40,16 @@ console.log(' ========== >', BluetoothZ);
 
 class BluetoothService {
   constructor() {
-    this.bleScanTimer = null;
+    this.autoReconnect = true;
     // adding the listner on Bluetooth status change
     this.bleScanListener = null;
     this.bleConnectedListener = null;
     this.bleDisconnectedListener = null;
     this.bleFailToConnectListener = null;
+    this.bleReadCharListener = null;
+    this.bleFailToReadListener = null;
+    this.bleUpdatesCharListener = null;
+    this.bleFailToEnableUpdatesListener = null;
     console.log('\n\n\n INITIALIZE \n\n\n');
     this.bleStatusLister = eventEmitter.addListener(
       BLE_ADAPTER_STATUS_DID_UPDATE,
@@ -57,6 +74,7 @@ class BluetoothService {
       store.dispatch(updateStatus(null));
     }
   }
+
   /**
    *
    * @param {function} onEnd => callback for scan finished event
@@ -68,10 +86,6 @@ class BluetoothService {
   startScan(onEnd, services, filter, options, timeout) {
     console.log('====> START SCAN');
     store.dispatch(clearDevices());
-    if (this.bleScanTimer) {
-      clearTimeout(this.bleScanTimer);
-      this.bleScanTimer = null;
-    }
     if (this.bleScanListener) {
       this.bleScanListener.remove();
     }
@@ -105,41 +119,44 @@ class BluetoothService {
    */
   async connect(uuid, onConnected, onDisconnected, onFailToConnect) {
     console.log('====> CONNECT', uuid);
-    // if(store.getState().bluetooth?.currentDevice !== nil){
-    //   this.disconnect()
-    // }
-    ///
     if (this.bleConnectedListener) this.bleConnectedListener.remove();
     if (this.bleDisconnectedListener) this.bleDisconnectedListener.remove();
+    if (this.bleCharFoundListener) this.bleCharFoundListener.remove();
     if (this.bleFailToConnectListener) this.bleFailToConnectListener.remove();
-    try {
-      this.bleConnectedListener = eventEmitter.addListener(
-        BLE_PERIPHERAL_CONNECTED,
-        event => {
-          console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
-          store.dispatch(addCurrentDevice(event.uuid));
-          if (onConnected) onConnected(event.uuid);
-        },
-      );
-      this.bleDisconnectedListener = eventEmitter.addListener(
-        BLE_PERIPHERAL_DISCONNECTED,
-        event => {
-          console.log('x BLE_PERIPHERAL_DISCONNECTED ', event);
-          store.dispatch(removeCurrentDevice(event.uuid));
-          if (onDisconnected) onDisconnected(event.uuid);
-        },
-      );
-      this.bleFailToConnectListener = eventEmitter.addListener(
-        BLE_PERIPHERAL_CONNECT_FAILED,
-        event => {
-          console.log('x BLE_PERIPHERAL_CONNECT_FAILED ', event);
-          if (onFailToConnect) onFailToConnect();
-        },
-      );
-      await BluetoothZ.connect(uuid);
-    } catch (error) {
-      console.log('====> Connect error', error);
-    }
+
+    this.bleConnectedListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_CONNECTED,
+      event => {
+        console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
+        store.dispatch(addCurrentDevice(event.uuid));
+        if (onConnected) onConnected(event.uuid);
+      },
+    );
+    this.bleCharFoundListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED,
+      event => {
+        console.log('!! BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED ', event);
+        store.dispatch(characteristicDiscovered({uuid, charUUID: event.uuid}));
+        if (onConnected) onConnected(event.uuid);
+      },
+    );
+    this.bleDisconnectedListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_DISCONNECTED,
+      event => {
+        console.log('x BLE_PERIPHERAL_DISCONNECTED ', event);
+        store.dispatch(removeCurrentDevice(event.uuid));
+        if (onDisconnected) onDisconnected(event.uuid);
+      },
+    );
+    this.bleFailToConnectListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_CONNECT_FAILED,
+      event => {
+        console.log('x BLE_PERIPHERAL_CONNECT_FAILED ', event);
+        store.dispatch(removeCurrentDevice(event.uuid));
+        if (onFailToConnect) onFailToConnect();
+      },
+    );
+    BluetoothZ.connect(uuid);
   }
 
   /**
@@ -148,11 +165,96 @@ class BluetoothService {
    */
   async disconnect(uuid) {
     console.log('====> DISCONNECT', uuid);
-    try {
-      await BluetoothZ.disconnect(uuid);
-    } catch (error) {
-      console.log('====> Connect error', error);
-    }
+    BluetoothZ.disconnect(uuid);
+  }
+
+  /**
+   *
+   * @param {*} uuid => address of devic to connect
+   */
+  async readCharacteristic(uuid, charUUID) {
+    console.log('====> READ', charUUID);
+    if (this.bleReadCharListener) this.bleReadCharListener.remove();
+    if (this.bleFailToReadListener) this.bleFailToReadListener.remove();
+
+    this.bleReadCharListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_CHARACTERISTIC_READ_OK,
+      event => {
+        console.log('!! BLE_PERIPHERAL_CHARACTERISTIC_READ_OK ', event);
+        store.dispatch(characteristicRead(event));
+        // if (onConnected) onConnected(event.uuid);
+      },
+    );
+    this.bleFailToReadListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED,
+      event => {
+        console.log('x BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED ', event);
+        store.dispatch(characteristicReadFailed(event));
+        // if (onFailToConnect) onFailToConnect();
+      },
+    );
+    BluetoothZ.readCharacteristicValue(uuid, charUUID);
+  }
+
+  /**
+   *
+   * @param {*} uuid => address of devic to connect
+   */
+  async changeCharacteristicNotification(uuid, charUUID, enable) {
+    console.log('====> ENABLE', charUUID, enable);
+    if (this.bleUpdatesCharListener) this.bleUpdatesCharListener.remove();
+    if (this.bleFailToEnableUpdatesListener)
+      this.bleFailToEnableUpdatesListener.remove();
+    if (this.bleCharUpdatesChangedListener)
+      this.bleCharUpdatesChangedListener.remove();
+
+    this.bleUpdatesCharListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_NOTIFICATION_UPDATES,
+      event => {
+        console.log('!! BLE_PERIPHERAL_NOTIFICATION_UPDATES ', event);
+        store.dispatch(
+          characteristicUpdates({
+            uuid: event.uuid,
+            charUUID: event.charUUID,
+            value: event.value,
+            enable: true,
+          }),
+        );
+        // if (onConnected) onConnected(event.uuid);
+      },
+    );
+    this.bleCharUpdatesChangedListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_NOTIFICATION_CHANGED,
+      event => {
+        console.log('!! BLE_PERIPHERAL_NOTIFICATION_CHANGED ', event);
+        store.dispatch(
+          characteristicUpdates({
+            uuid: event.uuid,
+            charUUID: event.charUUID,
+            enable: event.enable,
+          }),
+        );
+        // if (onConnected) onConnected(event.uuid);
+      },
+    );
+    this.bleFailToEnableUpdatesListener = eventEmitter.addListener(
+      BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED,
+      event => {
+        console.log('x BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED ', event);
+        store.dispatch(
+          characteristicChangeNotification({
+            uuid: event.uuid,
+            charUUID: event.charUUID,
+            enable: false,
+          }),
+        );
+        // if (onFailToConnect) onFailToConnect();
+      },
+    );
+    BluetoothZ.changeCharacteristicNotification(uuid, charUUID, enable);
+    setTimeout(() => {
+      // this.readCharacteristic(uuid, '00002a24-0000-1000-8000-00805f9b34fb');
+    }, 2000);
   }
 }
 

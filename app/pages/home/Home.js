@@ -6,9 +6,10 @@ import {
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
 import BottomBar from '../../components/bottom-bar/BottomBar';
-import StatusScreen from '../status/Status';
+// import StatusScreen from '../status/Status';
 import TestScreen from '../test/Test';
 import OverviewScreen from '../overview/Overview';
+import ArrangeDisplayScreen from '../screens/ArrangeDisplayScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -21,8 +22,8 @@ export default function HomeScreen() {
             headerShown: false,
           }}
           tabBar={props => <BottomBar {...props} />}>
-          <Tab.Screen name="Activity" component={TestScreen} />
-          {/* <Tab.Screen name="Status" component={StatusScreen} /> */}
+          <Tab.Screen name="BLE Test" component={TestScreen} />
+          <Tab.Screen name="Screens" component={ArrangeDisplayScreen} />
           <Tab.Screen name="Overview" component={OverviewScreen} />
         </Tab.Navigator>
       </NavigationContainer>
