@@ -35,6 +35,10 @@ Conversely, module.exports = Tiger would be equivalent to export default Tiger.
 
 So when you use module.exports = Tiger and then attempt import { Tiger } from './animals' you're effectively asking for Tiger.Tiger.
 
+## iOS 16.1.1 Support for XCode run destination
+
+hello, I worked around the same problem. The solution that I found was adding iOS 16.1 the device support file inside the Xcode app in path contents/Developer/platform/iPhoneOS.platform/DeviceSupport You can download it from https://github.com/iGhibli/iOS-DeviceSupport/tree/master/DeviceSupport or you can download the new beta version and grab the directory from it.
+
 ## Firma per ios >= 16
 
 https://stackoverflow.com/questions/68467306/the-code-signature-version-is-no-longer-supported

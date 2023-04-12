@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.CountDownTimer;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class BluetoothZ extends ReactContextBaseJavaModule {
     private static final String Characteristic_User_Description = "00002901-0000-1000-8000-00805f9b34fb";
@@ -64,7 +66,6 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     public static final String BLE_PERIPHERAL_DISCONNECTED = "BLE_PERIPHERAL_DISCONNECTED";
     public static final String BLE_PERIPHERAL_CONNECT_FAILED = "BLE_PERIPHERAL_CONNECT_FAILED";
     public static final String BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED = "BLE_PERIPHERAL_DISCOVER_SERVICES_FAILED";
-    /// ==============================================================================================================================
     public static final String BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED = "BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED";
     public static final String BLE_PERIPHERAL_CHARACTERISTIC_READ_OK = "BLE_PERIPHERAL_CHARACTERISTIC_READ_OK";
     public static final String BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED = "BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED";
@@ -73,16 +74,17 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     public static final String BLE_PERIPHERAL_NOTIFICATION_UPDATES = "BLE_PERIPHERAL_NOTIFICATION_UPDATES";
     public static final String BLE_PERIPHERAL_NOTIFICATION_CHANGED = "BLE_PERIPHERAL_NOTIFICATION_CHANGED";
     public static final String BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED = "BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED";
+
     private BluetoothAdapter bluetoothAdapter;
     private BluetoothLeScanner bluetoothLeScanner;
+    private Pattern filter;
     private int listenerCount = 0;
     private ReactApplicationContext reactContext;
     private LocalBroadcastReceiver  mLocalBroadcastReceiver     = new LocalBroadcastReceiver();
     private LocalScanCallback  mScanCallback                    = new LocalScanCallback();
     private LocalBluetoothGattCallback  mBluetoothGATTCallback  = new LocalBluetoothGattCallback();
-//    private BluetoothGatt currentDeviceGATTServer               = null;
     private HashMap<String, Peripheral> mPeripherals            = new HashMap<String, Peripheral>();
-//    private boolean isScanning = false;
+
     public class LocalBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -103,10 +105,17 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
             Log.d("SAMUELE", ""+ result.getDevice().getName());
             BluetoothDevice device = result.getDevice();
             if(device.getName() != null && !device.getName().isEmpty()){
-                WritableMap params = Arguments.createMap();
-                params.putString("uuid", device.getAddress() );
-                params.putString("name", device.getName() );
-                sendEvent(reactContext, BLE_PERIPHERAL_FOUND, params);
+                boolean niceFind = true;
+                if(filter != null) {
+                    niceFind = filter.matcher(device.getName()).matches();
+                }
+                if(niceFind) {
+                    Log.d("SAMUELE - no filter", ""+ result.getDevice().getName());
+                    WritableMap params = Arguments.createMap();
+                    params.putString("uuid", device.getAddress());
+                    params.putString("name", device.getName());
+                    sendEvent(reactContext, BLE_PERIPHERAL_FOUND, params);
+                }
             }
         }
     }
@@ -359,14 +368,23 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
 
     @SuppressLint("MissingPermission")
     @ReactMethod
-    public void startScan(@Nullable ReadableArray services, @Nullable String filter, @Nullable ReadableMap options, Promise promise) {
+    public void startScan(@Nullable ReadableArray services, @Nullable String filter) {
         this.bluetoothLeScanner = BluetoothAdapter.getDefaultAdapter().getBluetoothLeScanner();
         if(this.bluetoothLeScanner != null) {
-            Log.d("START SCAN", " AAAAAAAAAAA");
-            ArrayList<ScanFilter> filters = new ArrayList<>();
-//            scanFilters = new ArrayList<>()
             ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
-            this.bluetoothLeScanner.startScan(filters, settings, mScanCallback);
+            if(filter != null) {
+                this.filter = Pattern.compile(filter);
+            }
+            ArrayList<ScanFilter> servicesFilter = null;
+            if(services != null){
+                servicesFilter = new ArrayList<>();
+                for ( int i =0; i< services.size(); i++) {
+                    String serviceUUID = services.getString(i);
+                    ScanFilter f = new ScanFilter.Builder().setServiceUuid(new ParcelUuid( UUID.fromString(serviceUUID))).build();
+                    servicesFilter.add(f);
+                }
+            }
+            this.bluetoothLeScanner.startScan(servicesFilter, settings, mScanCallback);
         }
     }
 
