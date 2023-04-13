@@ -114,6 +114,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
                     WritableMap params = Arguments.createMap();
                     params.putString("uuid", device.getAddress());
                     params.putString("name", device.getName());
+                    params.putInt("rssi", result.getRssi());
                     sendEvent(reactContext, BLE_PERIPHERAL_FOUND, params);
                 }
             }
@@ -438,6 +439,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
         if(!mPeripherals.containsKey(uuid)) {
             WritableMap params = Arguments.createMap();
             params.putString("uuid", uuid);
+            params.putString("charUUID", charUUID);
             params.putString("warning", "Device already disconnected:" + uuid);
             Log.w("SAMUELE", "Device not found with provided address." + uuid);
             sendEvent(reactContext, BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED, params);

@@ -8,11 +8,27 @@ import {
   Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/dist/Feather';
+import {CommonActions} from '@react-navigation/native';
 
-export default function HeaderBar({title, user = null, dropDown = null}) {
+export default function HeaderBar({
+  title,
+  navigation,
+  onBackButton,
+  user = null,
+  dropDown = null,
+}) {
   return (
     <View style={[styles.header, {justifyContent: 'space-between'}]}>
       <View style={styles.header}>
+        {onBackButton && (
+          <TouchableOpacity
+            onPress={() => {
+              navigation.dispatch(CommonActions.goBack());
+              onBackButton();
+            }}>
+            <Icon name="chevron-left" size={30} color="#555" />
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerTitle}>{title}</Text>
         {dropDown && (
           <Icon name="chevron-down" size={30} color="#555" style={{}} />
@@ -57,12 +73,12 @@ if (Platform.OS === 'android') {
       position: 'relative',
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: '#0a0911',
+      gap: 1,
+      paddingLeft: 5,
       height: 70,
     },
     headerTitle: {
-      marginLeft: 15,
-      fontSize: 38,
+      fontSize: 34,
       fontFamily: 'Baloo2-SemiBold',
       color: '#fff',
     },
@@ -72,14 +88,12 @@ if (Platform.OS === 'android') {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      // backgroundColor: '#f00',
       gap: 1,
-      // height: 80,
+      paddingLeft: 5,
     },
     headerTitle: {
-      marginLeft: 15,
       // flexDirection: 'row',
-      fontSize: 32,
+      fontSize: 28,
       fontFamily: 'Baloo2-Medium',
       color: '#fff',
       // backgroundColor: '#0f0',

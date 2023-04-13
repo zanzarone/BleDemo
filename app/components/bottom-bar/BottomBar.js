@@ -76,10 +76,10 @@ if (Platform.OS === 'android') {
       bottom: 25,
       marginLeft: 20,
       marginRight: 20,
-      backgroundColor: '#333',
+      backgroundColor: '#171717',
       borderRadius: 15,
       elevation: 4,
-      shadowColor: '#555',
+      shadowColor: '#000',
     },
     bottomBarItem: {
       flex: 1,
@@ -88,7 +88,7 @@ if (Platform.OS === 'android') {
       alignItems: 'center',
       height: 80,
     },
-    activeColor: '#fff',
+    activeColor: '#3D4EEE',
     idleColor: '#555',
   });
 } else {
@@ -100,9 +100,9 @@ if (Platform.OS === 'android') {
       bottom: 25,
       marginLeft: 20,
       marginRight: 20,
-      backgroundColor: '#393939',
+      backgroundColor: '#171717',
       borderRadius: 15,
-      shadowColor: 'black',
+      shadowColor: '#000',
       shadowOffset: {width: -2, height: 4},
       shadowOpacity: 0.2,
       shadowRadius: 3,
@@ -114,7 +114,7 @@ if (Platform.OS === 'android') {
       height: 80,
       // padding: 20,
     },
-    activeColor: '#fff',
+    activeColor: '#3D4EEE',
     idleColor: '#555',
   });
 }

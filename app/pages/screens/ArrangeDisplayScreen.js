@@ -20,7 +20,7 @@ const types = [
   // {name: 'MTB', colors: ['red', 'black']},
 ];
 
-export default function ArrangeDisplayScreen() {
+export default function ArrangeDisplayScreen({navigation}) {
   const insets = useSafeAreaInsets();
   const [type, setType] = useState(0);
   return (
@@ -34,7 +34,7 @@ export default function ArrangeDisplayScreen() {
           paddingRight: insets.right,
         },
       ]}>
-      <HeaderBar title="Screens" />
+      <HeaderBar navigation={navigation} title="Screens" />
       <View style={{marginLeft: 15, gap: 1}}>
         <Text
           style={{fontSize: 24, color: '#fff', fontFamily: 'Baloo2-Regular'}}>

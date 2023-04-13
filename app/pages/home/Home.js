@@ -23,8 +23,8 @@ export default function HomeScreen() {
           }}
           tabBar={props => <BottomBar {...props} />}>
           <Tab.Screen name="BLE Test" component={TestScreen} />
-          <Tab.Screen name="Screens" component={ArrangeDisplayScreen} />
-          <Tab.Screen name="Overview" component={OverviewScreen} />
+          {/* <Tab.Screen name="Screens" component={ArrangeDisplayScreen} /> */}
+          {/* <Tab.Screen name="Overview" component={OverviewScreen} /> */}
         </Tab.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

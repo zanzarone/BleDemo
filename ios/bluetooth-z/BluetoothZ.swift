@@ -154,7 +154,8 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
       BLE_ADAPTER_STATUS_POWERED_OFF,
       BLE_ADAPTER_STATUS_UNKNOW,
       BLE_PERIPHERAL_FOUND,
-      BLE_PERIPHERAL_READY,BLE_PERIPHERAL_READ_RSSI,
+      BLE_PERIPHERAL_READY,
+      BLE_PERIPHERAL_READ_RSSI,
       BLE_PERIPHERAL_CONNECTED,
       BLE_PERIPHERAL_DISCONNECTED,
       BLE_PERIPHERAL_CONNECT_FAILED,
@@ -183,7 +184,8 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
       BLE_ADAPTER_STATUS_POWERED_OFF:BLE_ADAPTER_STATUS_POWERED_OFF,
       BLE_ADAPTER_STATUS_UNKNOW:BLE_ADAPTER_STATUS_UNKNOW,
       BLE_PERIPHERAL_FOUND:BLE_PERIPHERAL_FOUND,
-      BLE_PERIPHERAL_READY:BLE_PERIPHERAL_READY,BLE_PERIPHERAL_READ_RSSI:BLE_PERIPHERAL_READ_RSSI,
+      BLE_PERIPHERAL_READY:BLE_PERIPHERAL_READY,
+      BLE_PERIPHERAL_READ_RSSI:BLE_PERIPHERAL_READ_RSSI,
       BLE_PERIPHERAL_CONNECTED:BLE_PERIPHERAL_CONNECTED,
       BLE_PERIPHERAL_DISCONNECTED:BLE_PERIPHERAL_DISCONNECTED,
       BLE_PERIPHERAL_CONNECT_FAILED:BLE_PERIPHERAL_CONNECT_FAILED,
@@ -337,10 +339,7 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
         niceFind = regex.firstMatch(in: peripheral.identifier.uuidString, options: [], range: range) != nil
       }
       if niceFind {
-        self.sendEvent(withName: BLE_PERIPHERAL_FOUND, body: ["uuid":  peripheral.identifier.uuidString , "name":  peripheral.name!, "rssi": peripheral.rssi])
-//        found.append(peripheral)
-//        peripheral.delegate = self
-//        peripheral.readRSSI()
+        self.sendEvent(withName: BLE_PERIPHERAL_FOUND, body: ["uuid":  peripheral.identifier.uuidString , "name":  peripheral.name!, "rssi": RSSI])
       }
     }
   }

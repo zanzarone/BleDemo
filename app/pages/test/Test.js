@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Platform,
   StyleSheet,
+  Button,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import HeaderBar from '../../components/header-bar/HeaderBar';
@@ -22,23 +23,13 @@ import Animated, {
   withTiming,
   interpolate,
   cancelAnimation,
+  Easing,
+  Extrapolate,
 } from 'react-native-reanimated';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import DeviceDetails from '../device-details/DeviceDetails';
 
-let buttonShadow;
-if (Platform.OS === 'android') {
-  buttonShadow = StyleSheet.create({
-    elevation: 14,
-    shadowOpacity: 1,
-    shadowColor: 'white',
-  });
-} else {
-  buttonShadow = StyleSheet.create({
-    shadowColor: '#333',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 1,
-    shadowRadius: 3,
-  });
-}
+const Stack = createNativeStackNavigator();
 
 let style;
 if (Platform.OS === 'android') {
@@ -46,12 +37,12 @@ if (Platform.OS === 'android') {
     buttonShadow: {
       elevation: 14,
       shadowOpacity: 1,
-      shadowColor: 'white',
+      shadowColor: '#333',
     },
     shadow: {
-      elevation: 14,
+      elevation: 7,
       shadowOpacity: 1,
-      shadowColor: 'white',
+      shadowColor: '#000',
     },
   });
 } else {
@@ -69,13 +60,6 @@ if (Platform.OS === 'android') {
       shadowRadius: 3,
     },
   });
-
-  // = StyleSheet.create({
-  //   shadowColor: '#333',
-  //   shadowOffset: {width: 0, height: 2},
-  //   shadowOpacity: 1,
-  //   shadowRadius: 3,
-  // });
 }
 
 const Ring = ({delay, height, width, children, start = false}) => {
@@ -129,19 +113,136 @@ const Ring = ({delay, height, width, children, start = false}) => {
   );
 };
 
-function Device({name, uuid, rssi, map}) {
+// const Pulse = ({delay = 0, start = false}) => {
+//   const animation = useSharedValue(0);
+//   console.log('-------------------_>>>>>>', start);
+
+//   const animatedStyles = useAnimatedStyle(() => {
+//     // const opacity = interpolate(
+//     //   animation.value,
+//     //   [0, 1],
+//     //   [0.6, 0],
+//     //   // Extrapolate.CLAMP,
+//     // );
+//     return {
+//       opacity: 1 - animation.value,
+//       transform: [
+//         {
+//           scale: interpolate(
+//             animation.value,
+//             [0, 1],
+//             [0.6, 0],
+//             Extrapolate.CLAMP,
+//           ),
+//         },
+//       ],
+//     };
+//   });
+
+//   useEffect(() => {
+//     if (!start) {
+//       cancelAnimation(animation);
+//       animation.value = null;
+//     } else {
+//       animation.value = withDelay(
+//         delay,
+//         withRepeat(
+//           withTiming(1, {
+//             duration: 2000,
+//             easing: Easing.linear,
+//           }),
+//           -1,
+//           false,
+//         ),
+//       );
+//     }
+//   }, [start]);
+
+//   return (
+//     <Animated.View
+//       style={[
+//         {
+//           width: 80,
+//           height: 80,
+//           borderRadius: 15,
+//           position: 'absolute',
+//           borderColor: '#e91e63',
+//           borderWidth: 4,
+//           backgroundColor: '#ff6090',
+//           zIndex: 0,
+//         },
+//         animatedStyles,
+//       ]}
+//     />
+//   );
+// };
+
+const State = {
+  IDLE: 0,
+  SCAN_START: 1,
+  SCAN_END: 2,
+  ADAPTER_OFF: 3,
+  ADAPTER_INVALID: 4,
+  // CONNECTION_START: 5,
+  // CONNECTION_END: 6,
+};
+
+function ScanResult({
+  name,
+  uuid,
+  rssi,
+  disabled,
+  onConnect,
+  onDisconnect,
+  connected,
+  ready,
+}) {
+  const RSSISymbol = ({rssi}) => {
+    let icon;
+    if (rssi >= -65) {
+      icon = <Icon name="signal-cellular-3" size={20} color="green" />;
+    } else if (rssi < -65 && rssi > -75) {
+      icon = <Icon name="signal-cellular-2" size={20} color="lightgreen" />;
+    } else if (rssi <= -75 && rssi > -85) {
+      icon = <Icon name="signal-cellular-1" size={20} color="yellow" />;
+    } else {
+      icon = <Icon name="signal-cellular-outline" size={20} color="red" />;
+    }
+    return (
+      <View
+        style={{
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 5,
+        }}>
+        {icon}
+        <Text
+          style={{
+            color: '#fff',
+            fontFamily: 'Baloo2-Medium',
+            fontSize: 13,
+            textAlign: 'center',
+            minWidth: 55,
+          }}>
+          {rssi} dB
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <View
       key={name}
       style={[
         {
           flexDirection: 'row',
-          backgroundColor: '#171717',
+          backgroundColor: '#282A2C',
           borderRadius: 15,
           padding: 15,
           gap: 10,
           justifyContent: 'space-between',
-          marginBottom: 10,
+          marginBottom: 15,
         },
         style.shadow,
       ]}>
@@ -152,17 +253,32 @@ function Device({name, uuid, rssi, map}) {
           flex: 1,
           alignItems: 'center',
         }}>
-        <View
+        <TouchableOpacity
+          disabled={disabled}
+          onPress={() => {
+            if (!connected) {
+              onConnect();
+            } else {
+              console.log('PIPPPPPPPO');
+              onDisconnect();
+            }
+          }}
           style={{
             height: 55,
             width: 55,
-            backgroundColor: '#000',
+            backgroundColor: ready ? '#3D4EEE' : '#333',
             borderRadius: 15,
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <Icon name="access-point" color="lightgreen" size={26} />
-        </View>
+          <Icon
+            name={connected ? 'access-point' : 'access-point-remove'}
+            color="#fff"
+            size={26}
+            style={{zIndex: 1000}}
+          />
+          {/* <Pulse start={connect} /> */}
+        </TouchableOpacity>
         <View
           style={{
             flexDirection: 'column',
@@ -193,104 +309,156 @@ function Device({name, uuid, rssi, map}) {
           </View>
         </View>
       </View>
-      <View style={{flexDirection: 'row', alignItems: 'center', gap: 5}}>
-        <Icon name="signal-cellular-2" size={20} color="#555" />
-        <Text
-          style={{
-            color: '#fff',
-            fontFamily: 'Baloo2-Medium',
-            fontSize: 18,
-          }}>
-          {rssi} RSSI
-        </Text>
-      </View>
+      <RSSISymbol rssi={rssi} />
     </View>
   );
 }
 
-const BleButton = ({bluetooth, status, setStatus}) => {
-  if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_ON)
-    return (
-      <TouchableOpacity
-        disabled={status === 1}
-        onPress={() => {
-          console.log('SCAN');
-          setTimeout(() => {
-            BluetoothService.startScan(
-              () => {
-                setStatus(2);
-              },
-              null,
-              null,
-              10000,
-            );
-          }, 2000);
-          setStatus(1);
-          BluetoothService.clearAllDevices();
-        }}
-        style={[
-          {
-            zIndex: 1000,
-            position: 'absolute',
-            height: 70,
-            width: 70,
-            borderRadius: 35,
-            backgroundColor: 'royalblue',
-            justifyContent: 'center',
-            alignItems: 'center',
-          },
-          style.buttonShadow,
-        ]}>
-        <Icon name="bluetooth" size={40} color="#fff" />
-      </TouchableOpacity>
-    );
-  else if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
-    return (
-      <TouchableOpacity
-        disabled={status !== 2}
-        onPress={() => {
-          console.log('SCAN');
-        }}
-        style={[
-          {
-            zIndex: 1000,
-            position: 'absolute',
-            height: 70,
-            width: 70,
-            borderRadius: 35,
-            backgroundColor: 'crimson',
-            justifyContent: 'center',
-            alignItems: 'center',
-          },
-          style.buttonShadow,
-        ]}>
-        <Icon name="bluetooth-off" size={40} color="#fff" />
-      </TouchableOpacity>
-    );
-  }
+const BleButton = ({bluetooth, state, setState}) => {
+  const PrivateButton = () => {
+    if (
+      bluetooth.status === defines.BLE_ADAPTER_STATUS_UNKNOW ||
+      bluetooth.status === defines.BLE_ADAPTER_STATUS_INVALID
+    ) {
+      return (
+        <TouchableOpacity
+          disabled={state === State.SCAN_START}
+          onPress={() => {}}
+          style={[
+            {
+              zIndex: 1000,
+              position: 'absolute',
+              height: 70,
+              width: 70,
+              borderRadius: 35,
+              backgroundColor: '#333',
+              justifyContent: 'center',
+              alignItems: 'center',
+            },
+            style.buttonShadow,
+          ]}>
+          <Icon name="bluetooth-off" size={40} color="#555" />
+        </TouchableOpacity>
+      );
+    } else if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_ON) {
+      return (
+        <TouchableOpacity
+          disabled={state === State.SCAN_START}
+          onPress={() => {
+            console.log('SCAN');
+            setTimeout(() => {
+              BluetoothService.startScan(
+                () => {
+                  setState(State.SCAN_END);
+                },
+                null,
+                null,
+                7000,
+              );
+            }, 2000);
+            setState(State.SCAN_START);
+            BluetoothService.clearAllDevices();
+          }}
+          style={[
+            {
+              zIndex: 1000,
+              position: 'absolute',
+              height: 70,
+              width: 70,
+              borderRadius: 35,
+              backgroundColor: '#3D4EEE',
+              justifyContent: 'center',
+              alignItems: 'center',
+            },
+            style.buttonShadow,
+          ]}>
+          <Icon name="bluetooth" size={40} color="#fff" />
+        </TouchableOpacity>
+      );
+    } else if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
+      return (
+        <TouchableOpacity
+          disabled={state !== 2}
+          onPress={() => {
+            console.log('SCAN');
+          }}
+          style={[
+            {
+              zIndex: 1000,
+              position: 'absolute',
+              height: 70,
+              width: 70,
+              borderRadius: 35,
+              backgroundColor: 'crimson',
+              justifyContent: 'center',
+              alignItems: 'center',
+            },
+            style.buttonShadow,
+          ]}>
+          <Icon name="bluetooth-off" size={40} color="#fff" />
+        </TouchableOpacity>
+      );
+    }
+  };
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+      }}>
+      {<PrivateButton />}
+      <Ring
+        delay={0}
+        height={80}
+        width={80}
+        start={state === State.SCAN_START}
+      />
+      <Ring
+        delay={1000}
+        height={100}
+        width={100}
+        start={state === State.SCAN_START}
+      />
+      <Ring
+        delay={2000}
+        height={120}
+        width={120}
+        start={state === State.SCAN_START}
+      />
+      <Ring
+        delay={3000}
+        height={120}
+        width={120}
+        start={state === State.SCAN_START}
+      />
+    </View>
+  );
 };
 
-export default function TestScreen() {
+const Scan = ({navigation}) => {
   const insets = useSafeAreaInsets();
-  const [status, setStatus] = useState(0);
+  const [state, setState] = useState(State.IDLE);
   const bluetooth = useSelector(state => {
     return state.bluetooth;
   });
 
   useEffect(() => {
     if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_ON) {
-      setStatus(0);
+      setState(State.IDLE);
       BluetoothService.clearAllDevices();
     }
     if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
-      setStatus(3);
+      setState(State.ADAPTER_OFF);
       BluetoothService.clearAllDevices();
     }
     if (
       bluetooth.status === defines.BLE_ADAPTER_STATUS_INVALID ||
       bluetooth.status === defines.BLE_ADAPTER_STATUS_UNKNOW
     ) {
-      setStatus(4);
+      setState(State.ADAPTER_INVALID);
     }
   }, [bluetooth.status]);
 
@@ -313,174 +481,144 @@ export default function TestScreen() {
             flexDirection: 'row',
             justifyContent: 'center',
             alignItems: 'center',
-            // backgroundColor: 'pink',
           }}>
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-            }}>
-            <BleButton
-              bluetooth={bluetooth}
-              status={status}
-              setStatus={setStatus}
-            />
-            <Ring delay={0} height={80} width={80} start={status === 1} />
-            <Ring delay={1000} height={100} width={100} start={status === 1} />
-            <Ring delay={2000} height={120} width={120} start={status === 1} />
-            <Ring delay={3000} height={120} width={120} start={status === 1} />
-          </View>
+          <BleButton bluetooth={bluetooth} state={state} setState={setState} />
         </View>
         <View style={{flex: 1, backgroundColor: 'transparent'}}>
           <Text
             style={{
               textAlign: 'center',
               fontFamily: 'Baloo2-Regular',
-              fontSize: 20,
+              fontSize: 18,
               color: '#555',
-              marginTop: 10,
+              marginTop: 25,
+              marginBottom: 5,
               paddingHorizontal: 20,
-              // backgroundColor: 'red',
-              // flex: 1,
-              // textAlignVertical: 'top',
             }}>
-            {status === 0 && 'Press Bluetooth button to scan'}
-            {status === 1 && 'Wait until finish Scannig'}
-            {status === 2 && 'Devices found'}
-            {status === 3 && 'Adapter is OFF. Please enable Bluetooth'}
+            {state === State.IDLE && 'Press Bluetooth button to scan'}
+            {state === State.SCAN_START && 'Wait until finish scanning'}
+            {state === State.SCAN_END && 'Scan finished!'}
+            {state === State.ADAPTER_OFF &&
+              'Adapter is OFF. Please enable Bluetooth'}
+            {state === State.ADAPTER_INVALID &&
+              'Bluetooth is unavailable on this device'}
           </Text>
-          <FlatList
-            style={{
-              backgroundColor: 'transparent',
-              width: '100%',
-              marginTop: 10,
-              paddingHorizontal: 20,
-              flex: 1,
-            }}
-            contentContainerStyle={{alignItems: 'stretch'}}
-            data={bluetooth.devices}
-            renderItem={({item, idx}) => {
-              console.log('aaa', item, bluetooth.currentDevices);
-              const disconnectBtnVisible = bluetooth.currentDevices?.some(
-                d => d.uuid === item.uuid,
-              );
-              let isNotifying = false;
-              bluetooth.currentDevices?.map(d => {
-                if (d.uuid === item.uuid) {
-                  d.chars?.map(c => {
-                    if (c.uuid === LIVE_DATA_UUID) {
-                      isNotifying = c.notification;
-                    }
-                  });
-                }
-              });
-              return (
-                <Device name={item.name} uuid={item.uuid} rssi={item.rssi} />
-              );
-              return (
+          {bluetooth.devices?.length > 0 && (
+            <FlatList
+              style={{
+                width: '100%',
+                marginTop: 0,
+                marginBottom: 110,
+                paddingHorizontal: 20,
+                flex: 1,
+              }}
+              contentContainerStyle={{alignItems: 'stretch'}}
+              data={bluetooth.devices}
+              renderItem={({item, idx}) => {
+                const connected = bluetooth.connectedDevices?.some(
+                  d => d.uuid === item.uuid,
+                );
+                const ready = bluetooth.connectedDevices?.some(
+                  d => d.uuid === item.uuid && d.ready,
+                );
+                const connectionFree =
+                  bluetooth.connectedDevices.length === 0 ||
+                  bluetooth.connectedDevices.every(d => d?.ready === true);
+
+                console.log(
+                  'connectedDevices.length',
+                  bluetooth.connectedDevices.length,
+                  'connectionFree',
+                  connectionFree,
+                  'connected',
+                  connected,
+                  'connectedDevices.length',
+                  item.uuid,
+                );
+
+                return (
+                  <ScanResult
+                    disabled={state === State.SCAN_START || !connectionFree}
+                    name={item.name}
+                    uuid={item.uuid}
+                    rssi={item.rssi}
+                    connected={connected}
+                    ready={ready}
+                    onConnect={() => {
+                      BluetoothService.connect(item.uuid);
+                    }}
+                    onDisconnect={() => {
+                      BluetoothService.disconnect(item.uuid);
+                    }}
+                  />
+                );
+              }}
+            />
+          )}
+          {bluetooth.devices?.length <= 0 && (
+            <>
+              <View
+                style={{
+                  flex: 1,
+                  padding: 0,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}>
                 <View
-                  style={{
-                    flexDirection: 'row',
-                    alignSelf: 'stretch',
-                    paddingBottom: 10,
-                  }}>
-                  <View
-                    key={'flatlist' + idx}
+                  style={[
+                    {
+                      flexDirection: 'column',
+                      backgroundColor: '#111',
+                      borderRadius: 15,
+                      gap: 0,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginHorizontal: 30,
+                      paddingHorizontal: 30,
+                      paddingVertical: 30,
+                      zIndex: 1000,
+                    },
+                    style.shadow,
+                  ]}>
+                  <Icon name="broadcast-off" color="#444" size={50} />
+                  <Text
                     style={{
-                      backgroundColor: '#555',
-                      paddingHorizontal: 10,
-                      borderRadius: 20,
-                      flex: 1,
-                      width: '100%',
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
+                      fontSize: 18,
+                      textAlign: 'center',
+                      fontFamily: 'Baloo2-Bold',
+                      color: '#444',
                     }}>
-                    <TouchableOpacity
-                      style={{
-                        // backgroundColor: 'red',
-                        height: '100%',
-                        paddingHorizontal: 10,
-                        paddingVertical: 20,
-                      }}
-                      disabled={status === 1}
-                      onPress={() => {
-                        console.log('CONNECT');
-                        BluetoothService.connect(item.uuid, true);
-                      }}>
-                      <Text style={{fontFamily: 'Baloo2-Medium', fontSize: 22}}>
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 5,
-                      }}>
-                      {disconnectBtnVisible && (
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: '#333',
-                            height: '100%',
-                            height: 50,
-                            width: 50,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 25,
-                          }}
-                          onPress={() => {
-                            console.log('CHANGE');
-                            let notification = false;
-                            bluetooth.currentDevices?.map(d => {
-                              if (d.uuid === item.uuid) {
-                                d.chars.map(c => {
-                                  if (c.uuid === LIVE_DATA_UUID) {
-                                    notification = c.notification;
-                                  }
-                                });
-                              }
-                            });
-                            BluetoothService.changeCharacteristicNotification(
-                              item.uuid,
-                              LIVE_DATA_UUID,
-                              !notification,
-                            );
-                          }}>
-                          <Icon
-                            name="bluetooth"
-                            size={20}
-                            color={isNotifying ? 'lightgreen' : 'red'}
-                          />
-                        </TouchableOpacity>
-                      )}
-                      {disconnectBtnVisible && (
-                        <TouchableOpacity
-                          style={{
-                            backgroundColor: '#333',
-                            height: '100%',
-                            height: 50,
-                            width: 50,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: 25,
-                          }}
-                          onPress={() => {
-                            console.log('DISCONNECT');
-                            BluetoothService.disconnect(item.uuid);
-                          }}>
-                          <Icon name="x" size={20} color="red" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
+                    No nearby Bluetooth devices found
+                  </Text>
                 </View>
-              );
-            }}
-          />
+                {/* <Button
+                  title="Go to Details"
+                  onPress={() => navigation.navigate('DeviceDetails')}
+                /> */}
+              </View>
+              <View style={{flex: 1}}></View>
+            </>
+          )}
         </View>
       </View>
     </View>
+  );
+};
+
+export default function TestScreen({navigation}) {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Scan"
+        component={Scan}
+        options={{headerShown: false}}
+      />
+      <Stack.Screen
+        name="DeviceDetails"
+        component={DeviceDetails}
+        options={{headerShown: false}}
+        n
+      />
+    </Stack.Navigator>
   );
 }
