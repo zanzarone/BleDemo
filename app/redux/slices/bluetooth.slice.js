@@ -2,20 +2,37 @@ import {createSlice} from '@reduxjs/toolkit';
 const initialState = {
   status: null,
   devices: [],
-  connectedDevices: [],
+  // connectedDevices: [],
 };
 
 const bluetoothSlice = createSlice({
   name: 'bluetooth',
   initialState,
   reducers: {
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     updateStatus(state, action) {
       const {status} = action.payload;
       state.status = status;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     clearDevices(state, action) {
-      state.devices = initialState.devices;
+      let devices = [...state.devices];
+      devices = devices.filter(d => d.ready);
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     addDevice(state, action) {
       const {uuid} = action.payload;
       let devs = state.devices.filter(d => d.uuid !== uuid);
@@ -23,65 +40,113 @@ const bluetoothSlice = createSlice({
       devs.sort((a, b) => (a.name > b.name ? 1 : a.name < b.name ? -1 : 0));
       state.devices = devs;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     updateRSSI(state, action) {
       const {uuid, rssi} = action.payload;
-      state.devices.map(d => {
-        if (d.uuid !== uuid) {
+      let devices = [...state.devices];
+      devices.map(d => {
+        if (d.uuid === uuid) {
           d.rssi = rssi;
         }
         return d;
       });
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     connectingDevice(state, action) {
       const {uuid} = action.payload;
-      // if (state.connectedDevices.some(d => d.uuid === uuid)) {
-      //   console.log('sssssssssss');
-      //   return;
-      // }
-      state.connectedDevices.push({uuid, chars: [], ready: null});
-      console.log('sssssssssss', action.payload, uuid, state.connectedDevices);
+      let devices = [...state.devices];
+      devices.map(d => {
+        if (d.uuid === uuid) {
+          d.ready = null;
+          d.chars = [];
+        }
+        return d;
+      });
+      state.devices = devices;
     },
-    addCurrentDevice(state, action) {
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
+    deviceConnected(state, action) {
       const {uuid} = action.payload;
-      // if (state.connectedDevices.some(d => d.uuid === uuid)) {
-      //   console.log('sssssssssss');
-      //   return;
-      // }
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.ready = false;
         }
         return d;
       });
-      console.log('sssssssssss', action.payload, uuid, state.connectedDevices);
+      state.devices = devices;
     },
-    currentDeviceReady(state, action) {
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
+    deviceReady(state, action) {
       const {uuid} = action.payload;
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.ready = true;
         }
         return d;
       });
+      state.devices = devices;
     },
-    removeCurrentDevice(state, action) {
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
+    deviceDisconnected(state, action) {
       const {uuid} = action.payload;
-      state.connectedDevices = state.connectedDevices.filter(
-        d => d.uuid !== uuid,
-      );
+      let devices = [...state.devices];
+      devices.map(d => {
+        if (d.uuid === uuid) {
+          d.ready = undefined;
+          d.chars = [];
+        }
+        return d;
+      });
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     characteristicDiscovered(state, action) {
       const {uuid, charUUID} = action.payload;
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.chars = [...d.chars, {uuid: charUUID}];
         }
         return d;
       });
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     characteristicRead(state, action) {
       const {uuid, charUUID, value} = action.payload;
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.chars.map(c => {
             if (c.uuid === charUUID) {
@@ -92,10 +157,17 @@ const bluetoothSlice = createSlice({
         }
         return d;
       });
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     characteristicReadFailed(state, action) {
       const {uuid, charUUID} = action.payload;
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.chars.map(c => {
             if (c.uuid === charUUID) {
@@ -106,10 +178,17 @@ const bluetoothSlice = createSlice({
         }
         return d;
       });
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     characteristicUpdates(state, action) {
       const {uuid, charUUID, enable, value} = action.payload;
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.chars.map(c => {
             if (c.uuid === charUUID) {
@@ -121,10 +200,17 @@ const bluetoothSlice = createSlice({
         }
         return d;
       });
+      state.devices = devices;
     },
+    /**
+     *
+     * @param {*} state
+     * @param {*} action
+     */
     characteristicChangeNotification(state, action) {
       const {uuid, charUUID, enable} = action.payload;
-      state.connectedDevices.map(d => {
+      let devices = [...state.devices];
+      devices.map(d => {
         if (d.uuid === uuid) {
           d.chars.map(c => {
             if (c.uuid === charUUID) {
@@ -135,6 +221,7 @@ const bluetoothSlice = createSlice({
         }
         return d;
       });
+      state.devices = devices;
     },
   },
 });
@@ -144,14 +231,14 @@ export const {
   clearDevices,
   addDevice,
   updateRSSI,
-  addCurrentDevice,
-  removeCurrentDevice,
+  deviceConnected,
+  deviceDisconnected,
   characteristicDiscovered,
   characteristicRead,
   characteristicReadFailed,
   characteristicChangeNotification,
   characteristicUpdates,
-  currentDeviceReady,
+  deviceReady,
   connectingDevice,
 } = bluetoothSlice.actions;
 export default bluetoothSlice.reducer;

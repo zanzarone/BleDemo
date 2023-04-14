@@ -29,6 +29,14 @@ import Animated, {
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import DeviceDetails from '../device-details/DeviceDetails';
 
+const State = {
+  IDLE: 0,
+  SCAN_START: 1,
+  SCAN_END: 2,
+  ADAPTER_OFF: 3,
+  ADAPTER_INVALID: 4,
+};
+
 const Stack = createNativeStackNavigator();
 
 let style;
@@ -113,78 +121,94 @@ const Ring = ({delay, height, width, children, start = false}) => {
   );
 };
 
-// const Pulse = ({delay = 0, start = false}) => {
-//   const animation = useSharedValue(0);
-//   console.log('-------------------_>>>>>>', start);
+const BlinkingDot = ({ready, connected}) => {
+  const opacity = useSharedValue(1);
 
-//   const animatedStyles = useAnimatedStyle(() => {
-//     // const opacity = interpolate(
-//     //   animation.value,
-//     //   [0, 1],
-//     //   [0.6, 0],
-//     //   // Extrapolate.CLAMP,
-//     // );
-//     return {
-//       opacity: 1 - animation.value,
-//       transform: [
-//         {
-//           scale: interpolate(
-//             animation.value,
-//             [0, 1],
-//             [0.6, 0],
-//             Extrapolate.CLAMP,
-//           ),
-//         },
-//       ],
-//     };
-//   });
+  // Set the opacity value to animate between 0 and 1
+  useEffect(() => {
+    if (ready === false || ready === null) {
+      opacity.value = withRepeat(
+        withTiming(0, {duration: 800, easing: Easing.ease}),
+        -1,
+        true,
+      );
+    } else {
+      cancelAnimation(opacity);
+      opacity.value = 1;
+    }
+  }, [ready]);
 
-//   useEffect(() => {
-//     if (!start) {
-//       cancelAnimation(animation);
-//       animation.value = null;
-//     } else {
-//       animation.value = withDelay(
-//         delay,
-//         withRepeat(
-//           withTiming(1, {
-//             duration: 2000,
-//             easing: Easing.linear,
-//           }),
-//           -1,
-//           false,
-//         ),
-//       );
-//     }
-//   }, [start]);
+  const style = useAnimatedStyle(() => ({opacity: opacity.value}), []);
 
-//   return (
-//     <Animated.View
-//       style={[
-//         {
-//           width: 80,
-//           height: 80,
-//           borderRadius: 15,
-//           position: 'absolute',
-//           borderColor: '#e91e63',
-//           borderWidth: 4,
-//           backgroundColor: '#ff6090',
-//           zIndex: 0,
-//         },
-//         animatedStyles,
-//       ]}
-//     />
-//   );
-// };
+  return (
+    <Animated.View style={style}>
+      <Icon
+        name={ready === true ? 'access-point' : 'access-point-remove'}
+        color={
+          ready === true
+            ? '#fff'
+            : connected || ready === null
+            ? '#000'
+            : '#fff'
+        }
+        size={26}
+        style={{zIndex: 1000}}
+      />
+    </Animated.View>
+  );
+};
 
-const State = {
-  IDLE: 0,
-  SCAN_START: 1,
-  SCAN_END: 2,
-  ADAPTER_OFF: 3,
-  ADAPTER_INVALID: 4,
-  // CONNECTION_START: 5,
-  // CONNECTION_END: 6,
+const RSSISymbol = ({rssi}) => {
+  let icon;
+  if (rssi >= -65) {
+    icon = <Icon name="signal-cellular-3" size={22} color="green" />;
+  } else if (rssi < -65 && rssi > -75) {
+    icon = <Icon name="signal-cellular-2" size={22} color="lightgreen" />;
+  } else if (rssi <= -75 && rssi > -85) {
+    icon = <Icon name="signal-cellular-1" size={22} color="yellow" />;
+  } else {
+    icon = <Icon name="signal-cellular-outline" size={22} color="red" />;
+  }
+  return (
+    <View
+      style={{
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        // backgroundColor: 'red',
+        gap: 5,
+      }}>
+      {icon}
+      <Text
+        style={{
+          color: '#fff',
+          fontFamily: 'Baloo2-Medium',
+          fontSize: 11,
+          textAlign: 'center',
+          minWidth: 55,
+        }}>
+        {rssi} dB
+      </Text>
+    </View>
+  );
+};
+
+const MoreDetails = ({navigation, uuid}) => {
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        navigation.navigate('DeviceDetails', {
+          uuid,
+        });
+      }}
+      style={{
+        height: 35,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+      <Icon name="chevron-right" size={22} color="silver" />
+    </TouchableOpacity>
+  );
 };
 
 function ScanResult({
@@ -194,43 +218,10 @@ function ScanResult({
   disabled,
   onConnect,
   onDisconnect,
-  connected,
   ready,
+  navigation,
 }) {
-  const RSSISymbol = ({rssi}) => {
-    let icon;
-    if (rssi >= -65) {
-      icon = <Icon name="signal-cellular-3" size={20} color="green" />;
-    } else if (rssi < -65 && rssi > -75) {
-      icon = <Icon name="signal-cellular-2" size={20} color="lightgreen" />;
-    } else if (rssi <= -75 && rssi > -85) {
-      icon = <Icon name="signal-cellular-1" size={20} color="yellow" />;
-    } else {
-      icon = <Icon name="signal-cellular-outline" size={20} color="red" />;
-    }
-    return (
-      <View
-        style={{
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 5,
-        }}>
-        {icon}
-        <Text
-          style={{
-            color: '#fff',
-            fontFamily: 'Baloo2-Medium',
-            fontSize: 13,
-            textAlign: 'center',
-            minWidth: 55,
-          }}>
-          {rssi} dB
-        </Text>
-      </View>
-    );
-  };
-
+  const connected = ready === false || ready === true;
   return (
     <View
       key={name}
@@ -239,8 +230,10 @@ function ScanResult({
           flexDirection: 'row',
           backgroundColor: '#282A2C',
           borderRadius: 15,
-          padding: 15,
-          gap: 10,
+          paddingVertical: 15,
+          paddingLeft: 15,
+          paddingRight: 5,
+          gap: 0,
           justifyContent: 'space-between',
           marginBottom: 15,
         },
@@ -259,25 +252,35 @@ function ScanResult({
             if (!connected) {
               onConnect();
             } else {
-              console.log('PIPPPPPPPO');
               onDisconnect();
             }
           }}
           style={{
             height: 55,
             width: 55,
-            backgroundColor: ready ? '#3D4EEE' : '#333',
+            backgroundColor:
+              ready === true
+                ? '#3D4EEE'
+                : connected || ready === null
+                ? '#84F88D'
+                : '#333',
             borderRadius: 15,
             justifyContent: 'center',
             alignItems: 'center',
           }}>
-          <Icon
-            name={connected ? 'access-point' : 'access-point-remove'}
-            color="#fff"
+          <BlinkingDot ready={ready} connected={connected} />
+          {/* <Icon
+            name={ready === true ? 'access-point' : 'access-point-remove'}
+            color={
+              ready === true
+                ? '#fff'
+                : connected || ready === null
+                ? '#000'
+                : '#fff'
+            }
             size={26}
             style={{zIndex: 1000}}
-          />
-          {/* <Pulse start={connect} /> */}
+          /> */}
         </TouchableOpacity>
         <View
           style={{
@@ -310,6 +313,16 @@ function ScanResult({
         </View>
       </View>
       <RSSISymbol rssi={rssi} />
+      <View
+        style={{
+          flexDirection: 'column',
+          alignItems: 'center',
+          // backgroundColor: 'red',
+          justifyContent: 'center',
+          width: 20,
+        }}>
+        {ready && <MoreDetails navigation={navigation} uuid={uuid} />}
+      </View>
     </View>
   );
 }
@@ -468,7 +481,7 @@ const Scan = ({navigation}) => {
         mainStyle.body,
         {
           paddingTop: insets.top,
-          paddingBottom: insets.bottom,
+          // paddingBottom: insets.bottom,
           paddingLeft: insets.left,
           paddingRight: insets.right,
         },
@@ -477,22 +490,21 @@ const Scan = ({navigation}) => {
       <View style={([mainStyle.container], {flexDirection: 'column', flex: 1})}>
         <View
           style={{
-            height: 120,
+            height: 180,
             flexDirection: 'row',
             justifyContent: 'center',
             alignItems: 'center',
+            // backgroundColor: 'red',
           }}>
           <BleButton bluetooth={bluetooth} state={state} setState={setState} />
-        </View>
-        <View style={{flex: 1, backgroundColor: 'transparent'}}>
           <Text
             style={{
+              position: 'absolute',
+              top: 0,
               textAlign: 'center',
               fontFamily: 'Baloo2-Regular',
               fontSize: 18,
-              color: '#555',
-              marginTop: 25,
-              marginBottom: 5,
+              color: '#777',
               paddingHorizontal: 20,
             }}>
             {state === State.IDLE && 'Press Bluetooth button to scan'}
@@ -503,6 +515,8 @@ const Scan = ({navigation}) => {
             {state === State.ADAPTER_INVALID &&
               'Bluetooth is unavailable on this device'}
           </Text>
+        </View>
+        <View style={{flex: 1, backgroundColor: 'transparent'}}>
           {bluetooth.devices?.length > 0 && (
             <FlatList
               style={{
@@ -515,37 +529,31 @@ const Scan = ({navigation}) => {
               contentContainerStyle={{alignItems: 'stretch'}}
               data={bluetooth.devices}
               renderItem={({item, idx}) => {
-                const connected = bluetooth.connectedDevices?.some(
-                  d => d.uuid === item.uuid,
-                );
-                const ready = bluetooth.connectedDevices?.some(
-                  d => d.uuid === item.uuid && d.ready,
-                );
-                const connectionFree =
-                  bluetooth.connectedDevices.length === 0 ||
-                  bluetooth.connectedDevices.every(d => d?.ready === true);
+                const connectionFree = bluetooth.devices.every(d => {
+                  console.log('dentro', d);
+                  return d?.ready === undefined || d?.ready === true;
+                });
 
                 console.log(
-                  'connectedDevices.length',
-                  bluetooth.connectedDevices.length,
+                  idx,
+                  item.uuid,
+                  'ready',
+                  item.ready,
                   'connectionFree',
                   connectionFree,
-                  'connected',
-                  connected,
-                  'connectedDevices.length',
-                  item.uuid,
+                  'uuid',
                 );
 
                 return (
                   <ScanResult
+                    navigation={navigation}
                     disabled={state === State.SCAN_START || !connectionFree}
                     name={item.name}
                     uuid={item.uuid}
                     rssi={item.rssi}
-                    connected={connected}
-                    ready={ready}
+                    ready={item.ready}
                     onConnect={() => {
-                      BluetoothService.connect(item.uuid);
+                      BluetoothService.connect(item.uuid, true);
                     }}
                     onDisconnect={() => {
                       BluetoothService.disconnect(item.uuid);
@@ -561,8 +569,9 @@ const Scan = ({navigation}) => {
                 style={{
                   flex: 1,
                   padding: 0,
-                  justifyContent: 'center',
+                  // justifyContent: 'center',
                   alignItems: 'center',
+                  // backgroundColor: 'red',
                 }}>
                 <View
                   style={[

@@ -15,9 +15,9 @@ RCT_EXTERN_METHOD(status:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejec
 RCT_EXTERN_METHOD(startScan:(NSArray*)serviceUUIDs filter:(NSString*)f)
 RCT_EXTERN_METHOD(stopScan)
 RCT_EXTERN_METHOD(connect:(NSString*)uuidString)
+RCT_EXTERN_METHOD(cancel:(NSString*)uuidString)
 RCT_EXTERN_METHOD(disconnect:(NSString*)uuidString)
 RCT_EXTERN_METHOD(readCharacteristicValue:(NSString*)uuid charUUID:(NSString*)charUUID)
-//RCT_EXTERN_METHOD(writeCharacteristic:(NSString*)uuidString)
 RCT_EXTERN_METHOD(changeCharacteristicNotification:(NSString*)uuid charUUID:(NSString*)charUUID enable:(BOOL)enable)
 
 @end

@@ -9,14 +9,14 @@ import {
   clearDevices,
   addDevice,
   updateRSSI,
-  addCurrentDevice,
-  removeCurrentDevice,
+  deviceConnected,
+  deviceDisconnected,
   characteristicDiscovered,
   characteristicRead,
   characteristicReadFailed,
   characteristicChangeNotification,
   characteristicUpdates,
-  currentDeviceReady,
+  deviceReady,
   connectingDevice,
 } from '../redux/slices/bluetooth.slice';
 // import our BLE native module
@@ -91,44 +91,40 @@ class BluetoothService {
     /// BLE_PERIPHERAL_CONNECTED
     /// event = {uuid}
     eventEmitter.addListener(BLE_PERIPHERAL_CONNECTED, event => {
-      if (this.autoReconnect?.watcher)
-        clearTimeout(this.autoReconnect?.watcher);
       this.autoReconnect = null;
+      clearTimeout(this.connectionTimer);
+      this.connectionTimer = null;
       console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
-      store.dispatch(addCurrentDevice(event));
+      store.dispatch(deviceConnected(event));
     });
     /// BLE_PERIPHERAL_READY
     /// event = {uuid}
     eventEmitter.addListener(BLE_PERIPHERAL_READY, event => {
       console.log('!! BLE_PERIPHERAL_READY ', event);
-      store.dispatch(currentDeviceReady({uuid: event.uuid}));
+      store.dispatch(deviceReady({uuid: event.uuid}));
     });
     /// BLE_PERIPHERAL_DISCONNECTED
     /// event = {uuid, warning?}
     eventEmitter.addListener(BLE_PERIPHERAL_DISCONNECTED, event => {
       console.log('x BLE_PERIPHERAL_DISCONNECTED ', this.autoReconnect);
       if (this.autoReconnect !== null && this.autoReconnect.count > 0) {
-        clearTimeout(this.autoReconnect?.watcher);
-        this.autoReconnect = {
-          count: this.autoReconnect.count - 1,
-          watcher: setTimeout(() => this.disconnect({uuid: event.uuid}), 3000),
-        };
-        BluetoothZ.connect(event.uuid);
+        this.autoReconnect.count = this.autoReconnect.count - 1;
+        this.connect(event.uuid);
       } else {
-        if (this.autoReconnect?.watcher)
-          clearTimeout(this.autoReconnect?.watcher);
         this.autoReconnect = null;
-        store.dispatch(removeCurrentDevice({uuid: event.uuid}));
+        clearTimeout(this.connectionTimer);
+        this.connectionTimer = null;
+        store.dispatch(deviceDisconnected(event));
       }
     });
     /// BLE_PERIPHERAL_CONNECT_FAILED
     /// event = {uuid, error}
     eventEmitter.addListener(BLE_PERIPHERAL_CONNECT_FAILED, event => {
-      if (this.autoReconnect?.watcher)
-        clearTimeout(this.autoReconnect?.watcher);
       this.autoReconnect = null;
+      clearTimeout(this.connectionTimer);
+      this.connectionTimer = null;
       console.log('x BLE_PERIPHERAL_CONNECT_FAILED ', event);
-      store.dispatch(removeCurrentDevice(event));
+      store.dispatch(deviceDisconnected(event));
     });
     /// BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED
     /// event = {uuid, charUUID}
@@ -186,6 +182,7 @@ class BluetoothService {
   constructor() {
     console.log('\n\n\n INITIALIZE \n\n\n');
     this.autoReconnect = null;
+    this.connectionTimer = null;
     // adding the listner on Bluetooth status change
     this.addListeners();
     /// Initializing bluetooth native module
@@ -246,12 +243,25 @@ class BluetoothService {
     console.log('====> CONNECT', uuid);
     store.dispatch(connectingDevice({uuid}));
     BluetoothZ.connect(uuid);
+    clearTimeout(this.connectionTimer);
+    this.connectionTimer = setTimeout(() => {
+      this.autoReconnect = null;
+      this.cancel(uuid);
+    }, 8000);
     if (keepConnection && this.autoReconnect === null) {
       this.autoReconnect = {
         count: 5,
-        watcher: setTimeout(() => this.connect(uuid, keepConnection), 3000),
       };
     }
+  }
+
+  /**
+   *
+   * @param {*} uuid => address of devic to connect
+   */
+  async cancel(uuid) {
+    console.log('====> CANCEL CONN', uuid);
+    BluetoothZ.cancel(uuid);
   }
 
   /**

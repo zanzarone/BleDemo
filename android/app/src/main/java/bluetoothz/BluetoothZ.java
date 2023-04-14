@@ -127,6 +127,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String uuid = gatt.getDevice().getAddress();
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                mPeripherals.put(gatt.getDevice().getAddress(), new Peripheral(gatt));
                 WritableMap params = Arguments.createMap();
                 params.putString("uuid", uuid);
                 Log.w("SAMUELE", "Device CONNECTED!!!!." + uuid);
@@ -405,8 +406,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
         try {
             Log.d("SAMUELE","=====> CONNECT");
             final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(uuid);
-            BluetoothGatt gatt = device.connectGatt(reactContext, false, mBluetoothGATTCallback);
-            mPeripherals.put(device.getAddress(), new Peripheral(gatt));
+            device.connectGatt(reactContext, false, mBluetoothGATTCallback);
         } catch (IllegalArgumentException exception) {
             WritableMap params = Arguments.createMap();
             params.putString("uuid", uuid);
@@ -414,6 +414,13 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
             Log.w("SAMUELE", "Device not found with provided address." + uuid);
             sendEvent(reactContext, BLE_PERIPHERAL_CONNECT_FAILED, params);
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    @ReactMethod
+    public void cancel(String uuid) {
+        Log.d("SAMUELE","=====> CANCEL CONN");
+        this.disconnect(uuid);
     }
 
     @SuppressLint("MissingPermission")
