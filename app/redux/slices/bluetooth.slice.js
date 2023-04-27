@@ -49,7 +49,11 @@ function revolutionUpdate(element) {
     if (direction > 0) {
       // console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ AVANTI');
       if (data.angle < lastAngle) {
-        // console.log('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ A', data.angle, lastAngle);
+        console.log(
+          '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ A',
+          data.angle,
+          lastAngle,
+        );
         // Emitter.emit(EmitterSignal.REVOLUTION_DID_UPDATE, {
         lastValues = [...revolution.values];
         // ,
@@ -389,4 +393,5 @@ export const {
   deviceReady,
   connectingDevice,
 } = bluetoothSlice.actions;
+
 export default bluetoothSlice.reducer;
