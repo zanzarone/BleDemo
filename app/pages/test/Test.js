@@ -14,7 +14,6 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import mainStyle from '../../assets/style/theme.module.css';
 import {BluetoothService, defines} from '../../bluetoothz';
 import Icon from 'react-native-vector-icons/dist/MaterialCommunityIcons';
-const LIVE_DATA_UUID = '7f51000c-1b15-11e5-b60b-1697f925ec7b';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -28,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import DeviceDetails from '../device-details/DeviceDetails';
+import CharOverview from '../device-details/CharOverview';
 
 const State = {
   IDLE: 0,
@@ -327,11 +327,11 @@ function ScanResult({
   );
 }
 
-const BleButton = ({bluetooth, state, setState}) => {
+const BleButton = ({status, state, setState}) => {
   const PrivateButton = () => {
     if (
-      bluetooth.status === defines.BLE_ADAPTER_STATUS_UNKNOW ||
-      bluetooth.status === defines.BLE_ADAPTER_STATUS_INVALID
+      status === defines.BLE_ADAPTER_STATUS_UNKNOW ||
+      status === defines.BLE_ADAPTER_STATUS_INVALID
     ) {
       return (
         <TouchableOpacity
@@ -353,7 +353,7 @@ const BleButton = ({bluetooth, state, setState}) => {
           <Icon name="bluetooth-off" size={40} color="#555" />
         </TouchableOpacity>
       );
-    } else if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_ON) {
+    } else if (status === defines.BLE_ADAPTER_STATUS_POWERED_ON) {
       return (
         <TouchableOpacity
           disabled={state === State.SCAN_START}
@@ -388,7 +388,7 @@ const BleButton = ({bluetooth, state, setState}) => {
           <Icon name="bluetooth" size={40} color="#fff" />
         </TouchableOpacity>
       );
-    } else if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
+    } else if (status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
       return (
         <TouchableOpacity
           disabled={state !== 2}
@@ -452,28 +452,39 @@ const BleButton = ({bluetooth, state, setState}) => {
 };
 
 const Scan = ({navigation}) => {
+  console.log('=====================');
+  console.log('=====================');
+  console.log('=====================');
+  console.log('========SCAN =======');
+  console.log('=====================');
+  console.log('=====================');
+  console.log('=====================');
+
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(State.IDLE);
-  const bluetooth = useSelector(state => {
-    return state.bluetooth;
+  const status = useSelector(state => {
+    return state.bluetooth?.status;
+  });
+  const devices = useSelector(state => {
+    return state.bluetooth?.devices;
   });
 
   useEffect(() => {
-    if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_ON) {
+    if (status === defines.BLE_ADAPTER_STATUS_POWERED_ON) {
       setState(State.IDLE);
       BluetoothService.clearAllDevices();
     }
-    if (bluetooth.status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
+    if (status === defines.BLE_ADAPTER_STATUS_POWERED_OFF) {
       setState(State.ADAPTER_OFF);
       BluetoothService.clearAllDevices();
     }
     if (
-      bluetooth.status === defines.BLE_ADAPTER_STATUS_INVALID ||
-      bluetooth.status === defines.BLE_ADAPTER_STATUS_UNKNOW
+      status === defines.BLE_ADAPTER_STATUS_INVALID ||
+      status === defines.BLE_ADAPTER_STATUS_UNKNOW
     ) {
       setState(State.ADAPTER_INVALID);
     }
-  }, [bluetooth.status]);
+  }, [status]);
 
   return (
     <View
@@ -496,7 +507,7 @@ const Scan = ({navigation}) => {
             alignItems: 'center',
             // backgroundColor: 'red',
           }}>
-          <BleButton bluetooth={bluetooth} state={state} setState={setState} />
+          <BleButton status={status} state={state} setState={setState} />
           <Text
             style={{
               position: 'absolute',
@@ -517,7 +528,7 @@ const Scan = ({navigation}) => {
           </Text>
         </View>
         <View style={{flex: 1, backgroundColor: 'transparent'}}>
-          {bluetooth.devices?.length > 0 && (
+          {devices?.length > 0 && (
             <FlatList
               style={{
                 width: '100%',
@@ -527,9 +538,9 @@ const Scan = ({navigation}) => {
                 flex: 1,
               }}
               contentContainerStyle={{alignItems: 'stretch'}}
-              data={bluetooth.devices}
+              data={devices}
               renderItem={({item, idx}) => {
-                const connectionFree = bluetooth.devices.every(d => {
+                const connectionFree = devices.every(d => {
                   console.log('dentro', d);
                   return d?.ready === undefined || d?.ready === true;
                 });
@@ -563,7 +574,7 @@ const Scan = ({navigation}) => {
               }}
             />
           )}
-          {bluetooth.devices?.length <= 0 && (
+          {devices?.length <= 0 && (
             <>
               <View
                 style={{
@@ -626,8 +637,16 @@ export default function TestScreen({navigation}) {
         name="DeviceDetails"
         component={DeviceDetails}
         options={{headerShown: false}}
-        n
+      />
+      <Stack.Screen
+        name="CharOverview"
+        component={CharOverview}
+        options={{headerShown: false}}
       />
     </Stack.Navigator>
   );
 }
+
+// export default function TestScreen({navigation}) {
+//   return <View></View>;
+// }

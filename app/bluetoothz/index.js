@@ -92,8 +92,6 @@ class BluetoothService {
     /// event = {uuid}
     eventEmitter.addListener(BLE_PERIPHERAL_CONNECTED, event => {
       this.autoReconnect = null;
-      clearTimeout(this.connectionTimer);
-      this.connectionTimer = null;
       console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
       store.dispatch(deviceConnected(event));
     });
@@ -101,6 +99,8 @@ class BluetoothService {
     /// event = {uuid}
     eventEmitter.addListener(BLE_PERIPHERAL_READY, event => {
       console.log('!! BLE_PERIPHERAL_READY ', event);
+      clearTimeout(this.connectionTimer);
+      this.connectionTimer = null;
       store.dispatch(deviceReady({uuid: event.uuid}));
     });
     /// BLE_PERIPHERAL_DISCONNECTED
@@ -165,11 +165,11 @@ class BluetoothService {
     /// event = {uuid, charUUID, enable}
     eventEmitter.addListener(BLE_PERIPHERAL_NOTIFICATION_CHANGED, event => {
       console.log('!! BLE_PERIPHERAL_NOTIFICATION_CHANGED ', event);
-      store.dispatch(characteristicUpdates(event));
+      store.dispatch(characteristicChangeNotification(event));
     });
     /// BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED
     /// event = {uuid, charUUID, warning?}
-    this.bleFailToEnableUpdatesListener = eventEmitter.addListener(
+    eventEmitter.addListener(
       BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED,
       event => {
         console.log('x BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED ', event);
@@ -245,9 +245,10 @@ class BluetoothService {
     BluetoothZ.connect(uuid);
     clearTimeout(this.connectionTimer);
     this.connectionTimer = setTimeout(() => {
+      console.log('====> TIMEOUT CONNECTION', uuid);
       this.autoReconnect = null;
       this.cancel(uuid);
-    }, 8000);
+    }, 10000);
     if (keepConnection && this.autoReconnect === null) {
       this.autoReconnect = {
         count: 5,

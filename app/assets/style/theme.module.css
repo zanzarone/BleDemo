@@ -51,7 +51,8 @@
 }
 
 .secondaryButton {
-  min-height: 45px;
+  padding-top: 5px;
+  padding-bottom: 5px;
   min-width: 50px;
   background-color: #fefefe;
   border-radius: 15px;

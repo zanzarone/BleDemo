@@ -31,6 +31,16 @@ let BLE_PERIPHERAL_NOTIFICATION_UPDATES         : String  = "BLE_PERIPHERAL_NOTI
 let BLE_PERIPHERAL_NOTIFICATION_CHANGED         : String  = "BLE_PERIPHERAL_NOTIFICATION_CHANGED"
 let BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED   : String  = "BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED"
 
+public extension Data {
+    private static let hexAlphabet = Array("0123456789abcdef".unicodeScalars)
+    func hexStringEncoded() -> String {
+        String(reduce(into: "".unicodeScalars) { result, value in
+            result.append(Self.hexAlphabet[Int(value / 0x10)])
+            result.append(Self.hexAlphabet[Int(value % 0x10)])
+        })
+    }
+}
+
 class Peripheral {
   private var gattServer          : CBPeripheral!
   private var services            : [String:CBService] = [:]
@@ -447,7 +457,15 @@ class BluetoothZ: RCTEventEmitter, CBCentralManagerDelegate, CBPeripheralDelegat
         self.sendEvent(withName: p.isNotifying(charUUID) ? BLE_PERIPHERAL_NOTIFICATION_CHANGED : BLE_PERIPHERAL_CHARACTERISTIC_READ_FAILED, body: ["uuid": peripheral.identifier.uuidString, "error": err.localizedDescription])
         return
       }
-      self.sendEvent(withName: p.isNotifying(charUUID) ? BLE_PERIPHERAL_NOTIFICATION_CHANGED : BLE_PERIPHERAL_CHARACTERISTIC_READ_OK, body: ["uuid": peripheral.identifier.uuidString,"charUUID": charUUID, "value": characteristic.value ?? Data()])
+//      print("SOOOOOOOOOOOKA \(characteristic.value)")
+      if let data = characteristic.value{
+//        var arr2 = Array<UInt8>(repeating: 0, count: data.count/MemoryLayout<UInt8>.stride)
+//        _ = arr2.withUnsafeMutableBytes { data.copyBytes(to: $0) }
+        
+        self.sendEvent(withName: p.isNotifying(charUUID) ? BLE_PERIPHERAL_NOTIFICATION_CHANGED : BLE_PERIPHERAL_CHARACTERISTIC_READ_OK, body: ["uuid": peripheral.identifier.uuidString,"charUUID": charUUID, "value": data.hexStringEncoded()])
+      }else{
+        self.sendEvent(withName: p.isNotifying(charUUID) ? BLE_PERIPHERAL_NOTIFICATION_CHANGED : BLE_PERIPHERAL_CHARACTERISTIC_READ_OK, body: ["uuid": peripheral.identifier.uuidString,"charUUID": charUUID, "value": nil])
+      }
     }
   }
   

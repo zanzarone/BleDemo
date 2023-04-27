@@ -18,20 +18,18 @@ export default function DeviceDetails({route, navigation}) {
   const insets = useSafeAreaInsets();
   const {uuid} = route.params;
 
-  const bluetooth = useSelector(state => {
-    return state.bluetooth;
+  const device = useSelector(state => {
+    return state.bluetooth.devices.filter(d => d.uuid === uuid)[0];
   });
 
-  const device = bluetooth.devices.filter(d => d.uuid === uuid)[0];
-  // console.log('UUID', uuid, device.name);
+  // const device = bluetooth.devices.filter(d => d.uuid === uuid)[0];
+  console.log('DeviceDetails - UUID', uuid, device.name);
   useEffect(() => {
-    console.log('useeffect', device);
-    if (device) {
-      if (device?.ready === undefined) {
-        navigation.dispatch(CommonActions.goBack());
-      }
+    console.log('useeffect ----------------------------->', device);
+    if (device?.ready === undefined) {
+      navigation.dispatch(CommonActions.goBack());
     }
-  }, [device]);
+  }, [device?.ready]);
 
   return (
     <View
@@ -66,6 +64,12 @@ export default function DeviceDetails({route, navigation}) {
             return (
               <TouchableOpacity
                 key={item.uuid}
+                onPress={() => {
+                  navigation.navigate('CharOverview', {
+                    uuid,
+                    charUUID: item.uuid,
+                  });
+                }}
                 style={[
                   {
                     flexDirection: 'row',
@@ -80,7 +84,13 @@ export default function DeviceDetails({route, navigation}) {
                   },
                 ]}>
                 <View
-                  style={{flexDirection: 'row', gap: 10, alignItems: 'center'}}>
+                  style={{
+                    flexDirection: 'row',
+                    gap: 10,
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flex: 1,
+                  }}>
                   <View
                     style={{
                       backgroundColor: 'royalblue',
@@ -92,7 +102,11 @@ export default function DeviceDetails({route, navigation}) {
                     }}>
                     <Icon name="bluetooth" size={18} />
                   </View>
-                  <View style={{flexDirection: 'column'}}>
+                  <View
+                    style={{
+                      flexDirection: 'column',
+                      flex: 1,
+                    }}>
                     <Text
                       style={{
                         fontFamily: 'Baloo2-Bold',
@@ -110,6 +124,7 @@ export default function DeviceDetails({route, navigation}) {
                       {item.uuid}
                     </Text>
                   </View>
+                  <Icon name="chevron-right" size={22} color="silver" />
                 </View>
               </TouchableOpacity>
             );
