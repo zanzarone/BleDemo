@@ -2,69 +2,55 @@ import {View, Dimensions, TouchableOpacity, Text} from 'react-native';
 import mainStyle from '../../assets/style/theme.module.css';
 import HeaderBar from '../../components/header-bar/HeaderBar';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {LineChart} from 'react-native-chart-kit';
-import {useState} from 'react';
 import {BluetoothService, defines} from '../../bluetoothz';
 import {useSelector} from 'react-redux';
 const LIVE_DATA_UUID = '7f51000c-1b15-11e5-b60b-1697f925ec7b';
 const screenWidth = Dimensions.get('window').width;
+// import {LineChart} from 'react-native-charts-wrapper';
+import {LineChart} from 'react-native-chart-kit';
 
-const Pippo = ({uuid, charUUID}) => {
-  const characteristic = useSelector(state => {
-    const device = state.bluetooth.devices.filter(d => d.uuid === uuid)[0];
-    const char = device.chars.filter(c => c.uuid === charUUID)[0];
-    return char;
-  });
-  console.log(
-    '++++++++++++++++++++++++++++++++++++++++++++++++++++++++++',
-    characteristic,
-  );
+const chartConfig = {
+  backgroundGradientFrom: '#222',
+  backgroundGradientFromOpacity: 1,
+  backgroundGradientTo: '#222',
+  backgroundGradientToOpacity: 1,
 
-  return (
-    <TouchableOpacity
-      disabled={
-        characteristic?.enable === undefined || characteristic?.enable === null
-      }
-      onPress={() => {
-        //   setEnable(old => !old);
-        BluetoothService.changeCharacteristicNotification(
-          uuid,
-          charUUID,
-          !characteristic?.enable,
-        );
-      }}
-      style={
-        characteristic?.enable
-          ? mainStyle.primaryButton
-          : mainStyle.secondaryButton
-      }>
-      <Text
-        style={
-          characteristic?.enable
-            ? mainStyle.primaryButtonLabel
-            : mainStyle.secondaryButtonLabel
-        }>
-        Enable
-      </Text>
-    </TouchableOpacity>
-  );
+  fillShadowGradientFrom: '#f00',
+  fillShadowGradientFromOpacity: 0,
+  fillShadowGradientTo: '#f00',
+  fillShadowGradientToOpacity: 0,
+  color: (opacity = 1) => `#023047`,
+  labelColor: (opacity = 1) => `#fff`,
+  strokeWidth: 2,
+
+  useShadowColorFromDataset: false,
+  decimalPlaces: 0,
 };
 
 export default function CharOverview({route, navigation}) {
   const insets = useSafeAreaInsets();
   const {uuid, charUUID} = route.params;
-  console.log('CharOverview - UUID', uuid);
   const data = useSelector(state => {
     let data = [];
-    if (state.buffer?.hasOwnProperty(uuid)) {
-      if (state.buffer[uuid]?.hasOwnProperty(charUUID)) {
-        return state.buffer[uuid][charUUID];
+    if (state.bluetooth.buffer.hasOwnProperty(uuid)) {
+      if (state.bluetooth.buffer[uuid]?.hasOwnProperty(charUUID)) {
+        // console.log(
+        //   '$$$$$$$$$$$$$$$$$$$$$$$$',
+        //   state.bluetooth.buffer[uuid][charUUID],
+        // );
+        state.bluetooth.buffer[uuid][charUUID]?.map(item => {
+          // console.log('$$$$$$$$$$$$$$$$$$$$$$$$', item);
+          data.push({x: item.angle, y: item.torque});
+        });
       }
     }
     return data;
   });
 
   const name = charUUID.length < 8 ? charUUID : charUUID.substring(0, 8);
+
+  // console.log('$$$$$$$$$$$$$$$$$$$$$$$$', data);
+
   return (
     <View
       style={[
@@ -81,44 +67,29 @@ export default function CharOverview({route, navigation}) {
       {data.length > 0 && (
         <LineChart
           data={{
-            // labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-            labels: data.map(d => d.angle),
+            labels: [0, 45, 90, 135, 180, 225, 270, 315, 360],
             datasets: [
               {
-                data: data.map(d => d.torque),
-                withDots: false,
+                data: data.map(value => {
+                  return value.y;
+                }),
+                color: (opacity = 1) => 'royalblue',
+                strokeWidth: 3,
               },
             ],
           }}
-          width={screenWidth - 16}
-          height={440}
-          //   yAxisLabel="$"
-          //   yAxisSuffix="k"
-          yAxisInterval={1} // optional, defaults to 1
-          chartConfig={{
-            backgroundGradientFrom: '#222',
-            backgroundGradientFromOpacity: 0,
-            backgroundGradientTo: '#222',
-            backgroundGradientToOpacity: 0,
-            decimalPlaces: 1, // optional, defaults to 2dp
-            color: (opacity = 1) => `rgba(255, 255, 0, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(255, 255, 0, ${opacity})`,
-            //   style: {
-            //     borderRadius: 16,
-            //   },
-            // propsForDots: {r: 0},
-            //   propsForDots: {
-            //     r: '6',
-            //     strokeWidth: '2',
-            //     stroke: 'silver',
-            //   },
-          }}
-          // bezier
-          style={{
-            marginVertical: 8,
-            marginHorizontal: 8,
-            borderRadius: 0,
-          }}
+          width={screenWidth}
+          height={400}
+          chartConfig={chartConfig}
+          withDots={false}
+          withInnerLines={false}
+          withHorizontalLines={false}
+          withVerticalLines={false}
+          segments={8}
+          // yAxisLabel="$"
+          yAxisSuffix=" N"
+          formatXLabel={v => `${v}°`}
+          // verticalLabelRotation={45}
         />
       )}
 

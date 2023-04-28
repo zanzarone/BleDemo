@@ -93,6 +93,13 @@ class BluetoothService {
     eventEmitter.addListener(BLE_PERIPHERAL_CONNECTED, event => {
       this.autoReconnect = null;
       console.log('!! BLE_PERIPHERAL_CONNECTED ', event);
+      clearTimeout(this.connectionTimer);
+      this.connectionTimer = setTimeout(() => {
+        const {uuid} = event;
+        console.log('====> 1 TIMEOUT CONNECTION', uuid);
+        this.autoReconnect = null;
+        this.cancel(uuid);
+      }, 10000);
       store.dispatch(deviceConnected(event));
     });
     /// BLE_PERIPHERAL_READY
@@ -132,6 +139,13 @@ class BluetoothService {
       BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED,
       event => {
         // console.log('!! BLE_PERIPHERAL_CHARACTERISTIC_DISCOVERED ', event);
+        clearTimeout(this.connectionTimer);
+        this.connectionTimer = setTimeout(() => {
+          const {uuid} = event;
+          console.log('====> 2 TIMEOUT CONNECTION', uuid);
+          this.autoReconnect = null;
+          this.cancel(uuid);
+        }, 10000);
         store.dispatch(characteristicDiscovered(event));
       },
     );
@@ -158,13 +172,13 @@ class BluetoothService {
     /// BLE_PERIPHERAL_NOTIFICATION_UPDATES
     /// event = {uuid, charUUID, value}
     eventEmitter.addListener(BLE_PERIPHERAL_NOTIFICATION_UPDATES, event => {
-      console.log('!! BLE_PERIPHERAL_NOTIFICATION_UPDATES ', event);
+      // console.log('!! BLE_PERIPHERAL_NOTIFICATION_UPDATES ', event);
       store.dispatch(characteristicUpdates(event));
     });
     /// BLE_PERIPHERAL_NOTIFICATION_CHANGED
     /// event = {uuid, charUUID, enable}
     eventEmitter.addListener(BLE_PERIPHERAL_NOTIFICATION_CHANGED, event => {
-      console.log('!! BLE_PERIPHERAL_NOTIFICATION_CHANGED ', event);
+      // console.log('!! BLE_PERIPHERAL_NOTIFICATION_CHANGED ', event);
       store.dispatch(characteristicChangeNotification(event));
     });
     /// BLE_PERIPHERAL_ENABLE_NOTIFICATION_FAILED
@@ -239,7 +253,7 @@ class BluetoothService {
    *
    * @param {*} uuid => address of devic to connect
    */
-  async connect(uuid, keepConnection) {
+  connect(uuid, keepConnection) {
     console.log('====> CONNECT', uuid);
     store.dispatch(connectingDevice({uuid}));
     BluetoothZ.connect(uuid);
@@ -260,7 +274,7 @@ class BluetoothService {
    *
    * @param {*} uuid => address of devic to connect
    */
-  async cancel(uuid) {
+  cancel(uuid) {
     console.log('====> CANCEL CONN', uuid);
     BluetoothZ.cancel(uuid);
   }
@@ -269,7 +283,7 @@ class BluetoothService {
    *
    * @param {*} uuid => address of devic to connect
    */
-  async disconnect(uuid) {
+  disconnect(uuid) {
     console.log('====> DISCONNECT', uuid);
     BluetoothZ.disconnect(uuid);
   }
@@ -278,7 +292,7 @@ class BluetoothService {
    *
    * @param {*} uuid => address of devic to connect
    */
-  async readCharacteristic(uuid, charUUID) {
+  readCharacteristic(uuid, charUUID) {
     console.log('====> READ', charUUID);
     BluetoothZ.readCharacteristicValue(uuid, charUUID);
   }
@@ -287,7 +301,7 @@ class BluetoothService {
    *
    * @param {*} uuid => address of devic to connect
    */
-  async changeCharacteristicNotification(uuid, charUUID, enable) {
+  changeCharacteristicNotification(uuid, charUUID, enable) {
     console.log('====> ENABLE', charUUID, enable);
     BluetoothZ.changeCharacteristicNotification(uuid, charUUID, enable);
   }

@@ -25,8 +25,13 @@ export default function DeviceDetails({route, navigation}) {
   // const device = bluetooth.devices.filter(d => d.uuid === uuid)[0];
   console.log('DeviceDetails - UUID', uuid, device.name);
   useEffect(() => {
-    console.log('useeffect ----------------------------->', device);
+    console.log('useeffect ----------------------------->', device, navigation);
     if (device?.ready === undefined) {
+      console.log(
+        '2 useeffect ----------------------------->',
+        device,
+        navigation,
+      );
       navigation.dispatch(CommonActions.goBack());
     }
   }, [device?.ready]);

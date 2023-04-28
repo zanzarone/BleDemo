@@ -114,7 +114,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-            Log.d("SAMUELE", ""+ result.getDevice().getName());
+//            Log.d("SAMUELE", ""+ result.getDevice().getName());
             BluetoothDevice device = result.getDevice();
             if(device.getName() != null && !device.getName().isEmpty()){
                 boolean niceFind = true;
@@ -122,7 +122,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
                     niceFind = filter.matcher(device.getName()).matches();
                 }
                 if(niceFind) {
-                    Log.d("SAMUELE - no filter", ""+ result.getDevice().getName());
+//                    Log.d("SAMUELE - no filter", ""+ result.getDevice().getName());
                     WritableMap params = Arguments.createMap();
                     params.putString("uuid", device.getAddress());
                     params.putString("name", device.getName());
@@ -170,10 +170,10 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
                     List<BluetoothGattService> services = gatt.getServices();
                     Peripheral p = mPeripherals.get(gatt.getDevice().getAddress());
                     for (BluetoothGattService service : services) {
-                        Log.i("SAMUELE", "=>" + service.getUuid().toString());
+//                        Log.i("SAMUELE", "=>" + service.getUuid().toString());
                         List<BluetoothGattCharacteristic> characteristics = service.getCharacteristics();
                         for (BluetoothGattCharacteristic c : characteristics) {
-                            Log.i("SAMUELE", "==>" + c.getUuid().toString());
+//                            Log.i("SAMUELE", "==>" + c.getUuid().toString());
                             WritableMap params = Arguments.createMap();
                             params.putString("uuid", gatt.getDevice().getAddress());
                             params.putString("charUUID", c.getUuid().toString());
@@ -185,6 +185,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
                     params.putString("uuid", gatt.getDevice().getAddress());
                     sendEvent(reactContext, BLE_PERIPHERAL_READY, params);
                     p.mBluetoothGATT.requestMtu(512);
+                    p.mBluetoothGATT.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH);
                 }
             } else {
                 Log.e("SAMUELE", "onServicesDiscovered received: " + status);
@@ -198,7 +199,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
             String charUUID = characteristic.getUuid().toString();
             params.putString("uuid", uuid);
             params.putString("charUUID", charUUID);
-            Log.d("POPPI", "" +status);
+//            Log.d("POPPI", "" +status);
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 String bufferString = BluetoothZ.bytesToHex(characteristic.getValue());
                 params.putString("value", bufferString);
@@ -228,7 +229,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
                 BluetoothGattCharacteristic characteristic
         ) {
             String bufferString = BluetoothZ.bytesToHex(characteristic.getValue());
-            Log.d(" POPPI ", "" + bufferString);
+//            Log.d(" POPPI ", "" + bufferString);
             WritableMap params = Arguments.createMap();
             params.putString("uuid", gatt.getDevice().getAddress());
             params.putString("charUUID", characteristic.getUuid().toString());
@@ -411,7 +412,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     @ReactMethod
     public void stopScan() {
         this.bluetoothLeScanner.stopScan(mScanCallback);
-        Log.d("SAMUELE","=====> STOP SCAN");
+//        Log.d("SAMUELE","=====> STOP SCAN");
     }
 
     @SuppressLint("MissingPermission")
@@ -421,7 +422,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
             return;
         }
         try {
-            Log.d("SAMUELE","=====> CONNECT");
+//            Log.d("SAMUELE","=====> CONNECT");
             final BluetoothDevice device = bluetoothAdapter.getRemoteDevice(uuid);
             device.connectGatt(reactContext, false, mBluetoothGATTCallback);
         } catch (IllegalArgumentException exception) {
@@ -436,14 +437,14 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void cancel(String uuid) {
-        Log.d("SAMUELE","=====> CANCEL CONN");
+//        Log.d("SAMUELE","=====> CANCEL CONN");
         this.disconnect(uuid);
     }
 
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void disconnect(String uuid) {
-        Log.d("SAMUELE","=====> DISCONNECT");
+//        Log.d("SAMUELE","=====> DISCONNECT");
         if(!mPeripherals.containsKey(uuid)) {
             WritableMap params = Arguments.createMap();
             params.putString("uuid", uuid);
@@ -459,7 +460,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void readCharacteristicValue(String uuid,String charUUID) {
-        Log.d("SAMUELE","=====> readCharacteristicValue");
+//        Log.d("SAMUELE","=====> readCharacteristicValue");
         if(!mPeripherals.containsKey(uuid)) {
             WritableMap params = Arguments.createMap();
             params.putString("uuid", uuid);
@@ -476,7 +477,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void writeCharacteristic(String uuid,String charUUID, String value) {
-        Log.d("SAMUELE","=====> writeCharacteristic");
+//        Log.d("SAMUELE","=====> writeCharacteristic");
         if(!mPeripherals.containsKey(uuid)) {
             WritableMap params = Arguments.createMap();
             params.putString("uuid", uuid);
@@ -502,7 +503,7 @@ public class BluetoothZ extends ReactContextBaseJavaModule {
     @SuppressLint("MissingPermission")
     @ReactMethod
     public void changeCharacteristicNotification(String uuid,String charUUID, boolean enable) {
-        Log.d("SAMUELE","=====> changeCharacteristicNotification" + uuid + charUUID + enable);
+//        Log.d("SAMUELE","=====> changeCharacteristicNotification" + uuid + charUUID + enable);
         if(!mPeripherals.containsKey(uuid)) {
             WritableMap params = Arguments.createMap();
             params.putString("uuid", uuid);

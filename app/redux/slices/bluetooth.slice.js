@@ -94,6 +94,7 @@ function extractData({charUUID, raw}) {
   //   buff,
   //   );
   charUUID = charUUID.toLowerCase();
+  let result = [];
   switch (charUUID) {
     case CharacteristicUUIDs.SRM_TORQUE_ANGLE_VELOCITY_TIMESTAMP: {
       let buff = Buffer.from(raw, 'hex');
@@ -103,7 +104,7 @@ function extractData({charUUID, raw}) {
       const accumulatedCrankTime = buff.readUInt16LE(1);
       const torqueValues = [];
       const count = buff.readUInt8(3);
-      console.log('===================> count', count);
+      // console.log('===================> count', count);
       for (let i = 0; i < count; i++) {
         const base = i * 10;
         const accumulatedTimestamp = buff.readUInt32LE(base + 4);
@@ -127,24 +128,24 @@ function extractData({charUUID, raw}) {
         });
       }
       const element = {cadenceEventCount, accumulatedCrankTime, torqueValues};
-      console.log('===================> cadence', element.cadence);
-      console.log(
-        '===================> accumulatedCrankTime',
-        element.accumulatedCrankTime,
-      );
-      console.log('===================> torqueValues ', element.torqueValues);
+      // console.log('===================> cadence', element.cadence);
+      // console.log(
+      //   '===================> accumulatedCrankTime',
+      //   element.accumulatedCrankTime,
+      // );
+      // console.log('===================> torqueValues ', element.torqueValues);
       // dispatch(revolutionDidUpdate({element}));
       // Emitter.emit(EmitterSignal.SRM_TORQUE_ANGLE_VELOCITY_TIMESTAMP_READY, torqueValues.length > 0 ? {value: torqueValues[0]} : {value: undefined});
-      return revolutionUpdate(element);
+      result = revolutionUpdate(element);
     }
   }
+  return result;
 }
 
 const initialState = {
   status: null,
   devices: [],
   buffer: {},
-  // connectedDevices: [],
 };
 
 const bluetoothSlice = createSlice({
@@ -333,26 +334,13 @@ const bluetoothSlice = createSlice({
         state.buffer[uuid] = {};
       }
       if (!state.buffer[uuid].hasOwnProperty(charUUID)) {
-        state.buffer[uuid][charUUID] = {};
+        state.buffer[uuid][charUUID] = [];
       }
       const result = extractData({charUUID, raw: value});
+      // console.log('===================================>>>>>>', result);
       if (result.length > 0) {
         state.buffer[uuid][charUUID] = result;
       }
-      // let devices = [...state.devices];
-      // devices.map(d => {
-      //   if (d.uuid === uuid) {
-      //     d.chars.map(c => {
-      //       if (c.uuid === charUUID) {
-      //         c.value = value;
-      //         c.notification = enable;
-      //       }
-      //       return c;
-      //     });
-      //   }
-      //   return d;
-      // });
-      // state.devices = devices;
     },
     /**
      *
@@ -374,6 +362,11 @@ const bluetoothSlice = createSlice({
         return d;
       });
       state.devices = devices;
+      if (state.buffer.hasOwnProperty(uuid)) {
+        if (state.buffer[uuid].hasOwnProperty(charUUID)) {
+          state.buffer[uuid][charUUID] = [];
+        }
+      }
     },
   },
 });

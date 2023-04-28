@@ -452,13 +452,13 @@ const BleButton = ({status, state, setState}) => {
 };
 
 const Scan = ({navigation}) => {
-  console.log('=====================');
-  console.log('=====================');
-  console.log('=====================');
-  console.log('========SCAN =======');
-  console.log('=====================');
-  console.log('=====================');
-  console.log('=====================');
+  // console.log('=====================');
+  // console.log('=====================');
+  // console.log('=====================');
+  // console.log('========SCAN =======');
+  // console.log('=====================');
+  // console.log('=====================');
+  // console.log('=====================');
 
   const insets = useSafeAreaInsets();
   const [state, setState] = useState(State.IDLE);
@@ -541,7 +541,7 @@ const Scan = ({navigation}) => {
               data={devices}
               renderItem={({item, idx}) => {
                 const connectionFree = devices.every(d => {
-                  console.log('dentro', d);
+                  // console.log('dentro', d);
                   return d?.ready === undefined || d?.ready === true;
                 });
 
